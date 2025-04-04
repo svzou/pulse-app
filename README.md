@@ -1,6 +1,6 @@
 # << APP NAME >>
 
-> Developed by [YOUR NAMES]() for COMP 426: Modern Web Programming at UNC-Chapel Hill.
+> Developed by [YOUR NAMES]() Saanvi Arora, Rithy Sriniva, Connor Whitlow, and Sophia Zou  for COMP 426: Modern Web Programming at UNC-Chapel Hill.
 
 
 ![TypeScript](https://img.shields.io/badge/-TypeScript-05122A?style=flat&logo=typescript)
