@@ -43,7 +43,7 @@ Backend/Database:
 **Purpose:** The purpose of this feature is to educate individuals on the muscles this exercise targets and a visual representation to give a reminder to users on what the exercise is. For example, if the user forgets exactly what “cable flies” is, they can quickly look up the exercise in the app and find a clear image of how it is performed. It also helps motivate users by displaying their historical progress and provides a form of accountability to encourage consistency.
 
 
-**Technical Notes:** 
+**Technical Notes:** \
 Frontend:
 - A graph of the history of the weight lifted per session with a dropdown that allows users to switch time ranges between 12 weeks, 6 months, and 1 year
 - A text description describing the exercise along with a picture of proper form for the exercise to the right 
@@ -76,7 +76,7 @@ Backend:
 
 
 
-**Technical Notes:** 
+**Technical Notes:** \
 Frontend:
 - Profile header with avatar, username, followers/following, and optional bio
 - An “edit profile” button
