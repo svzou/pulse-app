@@ -4,8 +4,6 @@
 
 ## Feature Plan
 
-*Replace this with your feature plan. Write a bit more detail under each heading from before (description, user, purpose). Also, add a fourth section to each with some technical notes on how you may implement each feature and any other backend or frontend notes you may need.*
-
 ### Feature 1: Post/Draft Workouts
 
 **Description:** This feature allows users to create and share workout posts on the platform. Users can document their workouts by including important metrics such as duration and total volume lifted (in pounds) and attaching an image of their workout or results. Each post will display the user's avatar, name, and username tag, similar to social media platforms like Instagram. You can additionally add hashtags to your post.
@@ -17,18 +15,20 @@
 **Purpose:** This feature allows users to document their fitness journey, receive feedback and encouragement from the community, and maintain accountability by publicly sharing their workouts. It also serves as inspiration for other users looking for workout ideas.
 
 
-**Technical Notes:** Frontend:
-Create a post form component with input fields for workout details
-Image upload capability with preview
-Form validation for required fields
-Post card component to display workout posts in feed
-Modal or dedicated page for post creation
-Avatar and user information display
+**Technical Notes:** 
+Frontend:
+- Create a post form component with input fields for workout details
+- Image upload capability with preview
+- Form validation for required fields
+- Post card component to display workout posts in feed
+- Modal or dedicated page for post creation
+- Avatar and user information display
+
 Backend/Database:
-Supabase Auth for user authentication and session management
-Posts table in Supabase with foreign key to auth.users
-Supabase Storage buckets for workout images with references in the Posts table
-Fields for workout metrics (duration, volume, etc.)
+- Supabase Auth for user authentication and session management
+- Posts table in Supabase with foreign key to auth.users
+- Supabase Storage buckets for workout images with references in the Posts table
+- Fields for workout metrics (duration, volume, etc.)
 
 
 
@@ -43,12 +43,14 @@ Fields for workout metrics (duration, volume, etc.)
 **Purpose:** The purpose of this feature is to educate individuals on the muscles this exercise targets and a visual representation to give a reminder to users on what the exercise is. For example, if the user forgets exactly what “cable flies” is, they can quickly look up the exercise in the app and find a clear image of how it is performed. It also helps motivate users by displaying their historical progress and provides a form of accountability to encourage consistency.
 
 
-**Technical Notes:** Frontend:
-A graph of the history of the weight lifted per session with a dropdown that allows users to switch time ranges between 12 weeks, 6 months, and 1 year
-A text description describing the exercise along with a picture of proper form for the exercise to the right 
+**Technical Notes:** 
+Frontend:
+- A graph of the history of the weight lifted per session with a dropdown that allows users to switch time ranges between 12 weeks, 6 months, and 1 year
+- A text description describing the exercise along with a picture of proper form for the exercise to the right 
+
 Backend: 
-Use Supabase Storage buckets to store exercise image
-Create user_log table which stores the user id, exercise id, date, weight used, reps, sets, etc.
+- Use Supabase Storage buckets to store exercise image
+- Create user_log table which stores the user id, exercise id, date, weight used, reps, sets, etc.
 
 
 ### Feature 3: ___
@@ -74,15 +76,17 @@ Create user_log table which stores the user id, exercise id, date, weight used, 
 
 
 
-**Technical Notes:** Frontend:
-Profile header with avatar, username, followers/following, and optional bio
-An “edit profile” button
-Calendar component highlighting previous days worked out
-Monthly workout bar chart
+**Technical Notes:** 
+Frontend:
+- Profile header with avatar, username, followers/following, and optional bio
+- An “edit profile” button
+- Calendar component highlighting previous days worked out
+- Monthly workout bar chart
+  
 Backend:
-Supabase table with User profile
-Supase table with Media uploads
-Supabase table with workout
+- Supabase table with User profile
+- Supabase table with Media uploads
+- Supabase table with workout
 
 
 ### Feature 5: ___
