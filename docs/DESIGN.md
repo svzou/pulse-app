@@ -101,12 +101,12 @@ Backend:
 
 **Technical Notes:** \
 Frontend:
-Option to have the badge private or public 
-Displayed beneath the followers/ following line, next to avatar
+- Option to have the badge private or public 
+- Displayed beneath the followers/ following line, next to avatar
 
 Backend:
-Supabase table with badges, including the different types and tiers
-Supabase table with user badges, indicating if the user is displaying it or not by using the “displayed” boolean value
+- Supabase table with badges, including the different types and tiers
+- Supabase table with user badges, indicating if the user is displaying it or not by using the “displayed” boolean value
 
 
 ## Backend Database Schema
