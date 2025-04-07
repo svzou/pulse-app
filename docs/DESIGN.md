@@ -4,7 +4,7 @@
 
 ## Feature Plan
 
-### Feature 1: Post/Draft Workouts
+### Feature 1: Post/DraftWorkouts
 
 **Description:** This feature allows users to create and share workout posts on the platform. Users can document their workouts by including important metrics such as duration and total volume lifted (in pounds) and attaching an image of their workout or results. Each post will display the user's avatar, name, and username tag, similar to social media platforms like Instagram. You can additionally add hashtags to your post.
 
@@ -26,8 +26,8 @@ Frontend:
 
 Backend/Database:
 - Supabase Auth for user authentication and session management
-- Posts table in Supabase with foreign key to auth.users
-- Supabase Storage buckets for workout images with references in the Posts table
+- Workouts table in Supabase with foreign key to auth.users
+- Supabase Storage buckets for workout images with references in the Workouts table
 - Fields for workout metrics (duration, volume, etc.)
 
 
@@ -50,10 +50,11 @@ Frontend:
 
 Backend: 
 - Use Supabase Storage buckets to store exercise image
-- Create user_log table which stores the user id, exercise id, date, weight used, reps, sets, etc.
+- Create a workout_stats table which stores the user id, exercise id, date, weight used, reps, sets, etc.
+- Create exercise table which stores the different kinds of exercises, muscle groups targeted etc
 
 
-### Feature 3: ___
+### Feature 3: Workout Log page
 
 **Description:** This feature enables users to log, view, and reflect on individual workout sessions in a structured format. Each workout entry includes detailed information such as exercise names, sets, weight, and reps. The top of the page includes a workout summary written by the user that resembles a social media card, showing the date, duration, total volume lifted, and Twitter-like posts. 
 
@@ -74,7 +75,7 @@ Backend:
 - Supabase table: with workout logs with relation to authenticated users.
 - Sub table with exercise entries with files such as exercise, workout, set, weight, reps
 - Another supabase table: With workout_stats
-- User_id, caption, duration, volume, date
+- User_id, title, duration_minutes, description, date, etc.
 
 
 ### Feature 4: Viewing your profile
@@ -99,11 +100,11 @@ Frontend:
   
 Backend:
 - Supabase table with User profile
-- Supabase table with Media uploads
-- Supabase table with workout
+- Supabase table with workouts and summaries
+- Social relations like following and followers
 
 
-### Feature 5: ___
+### Feature 5: Badge display
 
 **Description:** The Badge display system is a way to recognize and reward users based on their workout frequency and consistency. Badges and stars are displayed with different tiers (Bronze, Silver, Gold) corresponding to specific workout count milestones. Stars correspond to volume lifted and badges correspond to number of workouts completed. We might also include more types of badges for things like consistency, improvement etc 
 
