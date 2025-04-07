@@ -91,15 +91,23 @@ Backend:
 
 ### Feature 5: ___
 
-**Description:**
+**Description:** The Badge display system is a way to recognize and reward users based on their workout frequency and consistency. Badges and stars are displayed with different tiers (Bronze, Silver, Gold) corresponding to specific workout count milestones. Stars correspond to volume lifted and badges correspond to number of workouts completed. We might also include more types of badges for things like consistency, improvement etc 
 
-**User(s):**
 
-**Purpose:**
+**User(s):** Anyone who wants to display their badges can do so, and can choose what badges to display. Those who choose to keep it private can also have a tangible way of keeping track of their progress.
 
-**Technical Notes:**
 
-*Feel free to add more here if needed.*
+**Purpose:** The display of badges and stars are helpful to users as they are indicators of progress and can help in both motivation and status symbols- celebrating user dedication to their fitness journey.
+
+**Technical Notes:** \
+Frontend:
+Option to have the badge private or public 
+Displayed beneath the followers/ following line, next to avatar
+
+Backend:
+Supabase table with badges, including the different types and tiers
+Supabase table with user badges, indicating if the user is displaying it or not by using the “displayed” boolean value
+
 
 ## Backend Database Schema
 ![supabase-schema-aomdacjzdfgueepwwsze (1)](https://github.com/user-attachments/assets/08dc719f-c8a5-4259-85a1-d2a55eec08af)
