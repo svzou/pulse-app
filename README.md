@@ -1,4 +1,4 @@
-# << PULSE >>
+# PULSE
 
 > Developed by Saanvi Arora, Rithy Srinivas, Connor Whitlow, and Sophia Zou  for COMP 426: Modern Web Programming at UNC-Chapel Hill.
 
