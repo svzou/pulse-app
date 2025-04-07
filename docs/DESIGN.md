@@ -55,13 +55,27 @@ Backend:
 
 ### Feature 3: ___
 
-**Description:**
+**Description:** This feature enables users to log, view, and reflect on individual workout sessions in a structured format. Each workout entry includes detailed information such as exercise names, sets, weight, and reps. The top of the page includes a workout summary written by the user that resembles a social media card, showing the date, duration, total volume lifted, and Twitter-like posts. 
 
-**User(s):**
 
-**Purpose:**
+**User(s):** Lifters, athletes, or general gym-goers who want to record their workouts in detail and monitor performance across multiple sessions. It also serves users looking to document specific workouts for routine planning or future reference.
 
-**Technical Notes:**
+
+**Purpose:** This feature allows users to accurately track their strength training progress, review data, and gain insight into performance trends. By combining social interaction with personal data of tracking exercise logs, this page balances community engagement and goal tracking. 
+
+
+**Technical Notes:** \
+Frontend:
+- Component to render a workout post
+- Dynamic exercise log UI with collapsible sections per exercise
+- Set input table showing set numbers, weights, reps
+
+Backend:
+- Supabase table: with workout logs with relation to authenticated users.
+- Sub table with exercise entries with files such as exercise, workout, set, weight, reps
+- Another supabase table: With workout_stats
+- User_id, caption, duration, volume, date
+
 
 ### Feature 4: Viewing your profile
 
