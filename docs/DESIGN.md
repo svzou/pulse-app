@@ -102,8 +102,9 @@ Backend:
 *Feel free to add more here if needed.*
 
 ## Backend Database Schema
+![supabase-schema-aomdacjzdfgueepwwsze (1)](https://github.com/user-attachments/assets/08dc719f-c8a5-4259-85a1-d2a55eec08af)
 
-*Replace this with a photo or PDF link of your backend database schema. Please add a short description for important design considerations.
+
 
 ## High-Fidelity Prototype
 
