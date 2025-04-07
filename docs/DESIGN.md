@@ -4,7 +4,7 @@
 
 ## Feature Plan
 
-### Feature 1: Post/DraftWorkouts
+### Feature 1: Post/Draft Workouts
 
 **Description:** This feature allows users to create and share workout posts on the platform. Users can document their workouts by including important metrics such as duration and total volume lifted (in pounds) and attaching an image of their workout or results. Each post will display the user's avatar, name, and username tag, similar to social media platforms like Instagram. You can additionally add hashtags to your post.
 
