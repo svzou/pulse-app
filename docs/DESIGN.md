@@ -129,5 +129,4 @@ Backend:
 
 
 ## High-Fidelity Prototype
-[
-<iframe style="border: 1px solid rgba(0, 0, 0, 0.1);" width="800" height="450" src="https://embed.figma.com/design/YitPmldXJdAzhB7ScDKOCC/Team-17-Pulse-Prototype?node-id=2-287&embed-host=share" allowfullscreen></iframe>](https://www.figma.com/design/YitPmldXJdAzhB7ScDKOCC/Team-17-Pulse-Prototype?node-id=2-287&m=dev&t=traHt2sL6FLKvzqZ-1) 
+[(https://www.figma.com/design/YitPmldXJdAzhB7ScDKOCC/Team-17-Pulse-Prototype?node-id=2-287&m=dev&t=traHt2sL6FLKvzqZ-1) 
