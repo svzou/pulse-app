@@ -15,7 +15,7 @@
 **Purpose:** This feature allows users to document their fitness journey, receive feedback and encouragement from the community, and maintain accountability by publicly sharing their workouts. It also serves as inspiration for other users looking for workout ideas.
 
 
-**Technical Notes:** 
+**Technical Notes:** \
 Frontend:
 - Create a post form component with input fields for workout details
 - Image upload capability with preview
@@ -107,4 +107,4 @@ Backend:
 
 ## High-Fidelity Prototype
 
-*Replace this with an embedded Figma project here.*
+<iframe style="border: 1px solid rgba(0, 0, 0, 0.1);" width="800" height="450" src="https://embed.figma.com/design/YitPmldXJdAzhB7ScDKOCC/Team-17-Pulse-Prototype?node-id=2-287&embed-host=share" allowfullscreen></iframe>
