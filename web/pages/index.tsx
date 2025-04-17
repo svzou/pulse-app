@@ -27,7 +27,7 @@ enum HomePageTab {
 }
 
 export default function Home() {
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
   // const supabase = createSupabaseComponentClient();
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   // const fetchDataFn =
