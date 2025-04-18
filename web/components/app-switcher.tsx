@@ -18,7 +18,7 @@ import {
 
 
 import Link from "next/link";
-import { NavProjects } from "@/components/nav-projects"
+import NavProjects from "@/components/nav-projects"
 
 
 import {
@@ -129,7 +129,7 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

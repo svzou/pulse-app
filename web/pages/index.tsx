@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/scroll-area";
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { RotateCcw } from "lucide-react";
+import UserProfile from "@/components/ui/profile-card";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +29,7 @@ enum HomePageTab {
 }
 
 export default function Home() {
-  // const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   // const supabase = createSupabaseComponentClient();
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   // const fetchDataFn =
@@ -88,8 +90,18 @@ export default function Home() {
             onClick={refresh}
             className="rounded-full w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            {/* <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-300" /> */}
+            <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </Button>
+          <UserProfile
+      name="Sophia Zou"
+      handle="@sophiazou"
+      avatarUrl="/images/sophia-avatar.png"
+      stats={[
+        { label: "Workouts", value: 334 },
+        { label: "Followers", value: "14,281" },
+        { label: "Following", value: 23 },
+      ]}
+    />
         </div>
       </Tabs>
 
