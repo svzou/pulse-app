@@ -1,3 +1,4 @@
+'use client';
 /**
  * Header component appearing at the top of all pages.
  *
@@ -6,7 +7,7 @@
  * @see https://comp426-25s.github.io/
  */
 import { SidebarTrigger } from "./ui/sidebar";
-import UserProfile from "./ui/profile-card";
+// import UserProfile from "./ui/profile-card";
 import { HeartPulse, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -19,7 +20,7 @@ import {
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
-import { getProfileData } from "@/utils/supabase/queries/profile";
+// import { getProfileData } from "@/utils/supabase/queries/profile";
 import { ModeToggle } from "./ui/mode-toggle";
 
 export default function Header() {
@@ -29,29 +30,34 @@ export default function Header() {
   const queryClient = useQueryClient();
 
   // Fetch the user profile data so that it can be displayed in the header.
-  const { data } = useQuery({
-    queryKey: ["user_profile"],
-    queryFn: async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data) return null;
-      return await getProfileData(supabase, data.user!, data.user!.id);
-    },
-  });
+//   const { data } = useQuery({
+//     queryKey: ["user_profile"],
+//     queryFn: async () => {
+//       const { data } = await supabase.auth.getUser();
+//       if (!data) return null;
+//       return await getProfileData(supabase, data.user!, data.user!.id);
+//     },
+//   });
 
   return (
     <header className="flex px-3 pt-3 h-16 shrink-0 items-center justify-end gap-2 fixed top-0 left-0 right-0 z-10 pointer-events-none">
       <div className="flex items-center gap-3 pointer-events-auto">
-        <UserProfile />
-      </div>
+        hellio
+ </div>
+ </header>
+  )
+};
+        {/* <UserProfile /> */}
+      
       {/* <div className="absolute left-4 pointer-events-auto">
         <SidebarTrigger className="text-gray-600 dark:text-gray-300" />
       </div> */}
-      {data && (
-        <div className="flex items-center gap-3 pointer-events-auto">
+      {/* {data && (
+        <div className="flex items-center gap-3 pointer-events-auto"> */}
           {/* Dark mode / light mode toggle */}
           <ModeToggle />
           {/* Dropdown menu for the user, if it exists */}
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger>
               <Avatar className="mt-1">
                 <AvatarImage
@@ -82,9 +88,7 @@ export default function Header() {
                 <LogOut /> Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-    </header>
-  )
-};
+          </DropdownMenu> */}
+        {/* </div>
+      )} */}
+   

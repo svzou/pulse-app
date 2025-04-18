@@ -7,7 +7,7 @@
  * @license MIT
  * @see https://comp426-25s.github.io/
  */
-
+"use client";
 import { createBrowserClient } from "@supabase/ssr";
 
 export function createSupabaseComponentClient() {
