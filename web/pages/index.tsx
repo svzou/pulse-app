@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/scroll-area";
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { GetServerSidePropsContext } from "next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +51,7 @@ export default function Home() {
   //   },
   //   initialPageParam: 0, // Start fetching from the first page
   // });
+  const queryClient = useQueryClient();
   const refresh = () => {
     queryClient.resetQueries();
   };
@@ -105,3 +108,32 @@ export default function Home() {
     
   );
 }
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // Create the supabase context that works specifically on the server
+  const supabase = createSupabaseServerClient(context);
+
+  // Attempt to load the user data
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  // If the user is not logged in, redirect them to the login page
+  if (userError || !userData) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+  // Return the user and profile as props
+  return {
+    props: {
+      user: userData.user,
+    },
+  };
+}
+function createSupabaseServerClient(context: GetServerSidePropsContext) {
+  return createServerSupabaseClient(context);
+}
+

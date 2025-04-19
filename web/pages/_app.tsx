@@ -25,7 +25,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <AppSidebar  />
         <div className="flex-1 flex flex-col h-screen">
           <Header/>
-          <main className="flex-1 overflow-auto pt-16 px-4 flex justify-center bg-red-400">
+          <main className="flex-1 overflow-auto pt-16 px-4 flex justify-center">
           <Component {...pageProps} />
           <Tooltip>
 
