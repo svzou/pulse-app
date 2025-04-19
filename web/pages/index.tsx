@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
 import UserProfile from "@/components/ui/profile-card";
+import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,7 @@ enum HomePageTab {
 
 export default function Home() {
   const queryClient = useQueryClient();
-  // const supabase = createSupabaseComponentClient();
+  const supabase = createSupabaseComponentClient();
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   // const fetchDataFn =
   // activeTab === HomePageTab.FOR_YOU
@@ -56,12 +57,12 @@ export default function Home() {
   };
     
   return (
-    <div className="w-full max-w-[600px] h-full">
+    <div className="w-full mx-auto max-w-[600px] h-full">
       {/* Display all three tabs for each feed + the refresh button. */}
       <Tabs
         value={activeTab.toString()}
         onValueChange={(tab) => setActiveTab(tab)}
-        className="w-full mt-8"
+        className="w-full mt-16"
       >
         <div className="flex flex-row items-center gap-3 px-2">
           <TabsList className="grid grid-cols-3 w-full h-[48px] bg-gray-100 dark:bg-gray-800 rounded-xl p-1 shadow-sm">
@@ -92,7 +93,10 @@ export default function Home() {
           >
             <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </Button>
-          <UserProfile
+          
+        </div>
+      </Tabs>
+<UserProfile
       name="Sophia Zou"
       handle="@sophiazou"
       avatarUrl="/images/sophia-avatar.png"
@@ -102,9 +106,6 @@ export default function Home() {
         { label: "Following", value: 23 },
       ]}
     />
-        </div>
-      </Tabs>
-
       {/* Scroll area containing the feed. */}
       {/* {!posts || posts.pages.flat().length === 0 ? (
         <div>No posts available</div>
