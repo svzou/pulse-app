@@ -3,20 +3,26 @@
 /**
  * Improved Header component with fixes for authentication persistence
  */
-import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
-import { useRouter } from "next/router";
-import { useEffect, useState, useCallback } from "react";
-import { LogOut, UserRound } from "lucide-react";
+import { SidebarTrigger } from './ui/sidebar';
+import { LogOut, UserRound } from 'lucide-react';
+import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
+import { createSupabaseComponentClient } from '@/utils/supabase/clients/component';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/router';
+import { getProfileData } from '@/utils/supabase/queries/profile';
+import { ModeToggle } from './ui/mode-toggle';
+import { useEffect, useState, useCallback } from "react";
 
 export default function Header() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [supabase] = useState(() => createSupabaseComponentClient());
 
@@ -28,21 +34,28 @@ export default function Header() {
       
       if (error) {
         console.error("Error fetching session:", error);
-        return;
+        return null;
       }
 
-      if (data?.session?.user) {
-        setUserEmail(data.session.user.email || null);
-      } else {
-        setUserEmail(null);
-      }
+      return data?.session?.user || null;
     } catch (error) {
       console.error("Unexpected error checking session:", error);
+      return null;
     } finally {
       setLoading(false);
     }
   }, [supabase]);
 
+  // Fetch user profile data for header display
+  const { data: profile } = useQuery({
+    queryKey: ['user_profile'],
+    queryFn: async () => {
+      const user = await fetchUserSession();
+      if (!user) return null;
+      return getProfileData(supabase, user, user.id);
+    },
+  });
+  
   // Initialize auth state
   useEffect(() => {
     fetchUserSession();
@@ -52,15 +65,15 @@ export default function Header() {
       console.log("Auth state changed:", event);
       
       if (event === 'SIGNED_IN' && session) {
-        setUserEmail(session.user.email || null);
+        queryClient.invalidateQueries({ queryKey: ['user_profile'] });
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
-        setUserEmail(null);
+        queryClient.resetQueries({ queryKey: ['user_profile'] });
         setLoading(false);
       } else if (event === 'TOKEN_REFRESHED') {
         // Important to handle token refresh events to maintain session
         if (session) {
-          setUserEmail(session.user.email || null);
+          queryClient.invalidateQueries({ queryKey: ['user_profile'] });
         }
       }
     });
@@ -69,7 +82,7 @@ export default function Header() {
       // Clean up auth listener
       authListener?.subscription?.unsubscribe();
     };
-  }, [supabase, fetchUserSession]);
+  }, [supabase, fetchUserSession, queryClient]);
 
   // Handle tab visibility changes to refresh auth state
   useEffect(() => {
@@ -89,33 +102,35 @@ export default function Header() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
+      queryClient.resetQueries({ queryKey: ["user_profile"] });
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
-  // Get user initial for avatar
-  const getUserInitial = () => {
-    return userEmail ? userEmail.charAt(0).toUpperCase() : 'U';
-  };
-
-  const profileNavigation = () => {
-    router.push("/profile");
-  };
+  const avatarUrl = profile?.avatar_url
+    ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_url).data.publicUrl
+    : "";
 
   return (
-    <header className="flex justify-end px-6 py-4 w-full">
+    <header className="flex px-3 pt-3 h-16 shrink-0 items-center justify-end gap-2 fixed top-0 left-0 right-0 z-10 pointer-events-none">
+      <div className="absolute left-2 mt-8 pointer-events-auto">
+        <SidebarTrigger className="text-gray-600 dark:text-gray-300" />
+      </div> 
       <div className="pointer-events-auto">
-        {!loading && userEmail ? (
+        {!loading && profile ? (
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <div className="h-10 w-10 rounded-xl bg-black dark:bg-white flex items-center justify-center text-white dark:text-black font-medium transition-all hover:bg-gray-800 dark:hover:bg-gray-200">
-                {getUserInitial()}
-              </div>
+              <Avatar className="mt-1">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback>
+                  {profile.full_name ? profile.full_name.slice(0, 2).toUpperCase() : 'U'}
+                </AvatarFallback>
+              </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl border border-gray-100 dark:border-gray-800 shadow-xl">
-              <DropdownMenuItem onClick={profileNavigation} className="cursor-pointer text-gray-700 dark:text-gray-300">
+              <DropdownMenuItem onClick={() => router.push(`/profile/${profile.id}`)} className="cursor-pointer text-gray-700 dark:text-gray-300">
                 <UserRound className="mr-2 h-4 w-4" /> My Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-gray-700 dark:text-gray-300">
@@ -133,6 +148,9 @@ export default function Header() {
             Sign in
           </button>
         )}
+      </div>
+      <div className="flex items-center gap-3 pointer-events-auto">
+        <ModeToggle />
       </div>
     </header>
   );
