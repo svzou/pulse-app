@@ -1,4 +1,5 @@
 "use client";
+
 import type { AppProps } from "next/app";
 import "@/styles/globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -24,7 +25,7 @@ export default function App({ Component, pageProps }: AppProps) {
             <AppSidebar />
             <div className="flex-1 flex flex-col">
               <Header />
-              <main className="flex-1 pt-16 px-4 overflow-auto bg-red-400">
+              <main className="flex-1 overflow-auto pt-16 px-4 flex justify-center">
                 <Component {...pageProps} />
                 <Tooltip />
               </main>

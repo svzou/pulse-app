@@ -1,9 +1,6 @@
 // Home page showing feed
 
-
-import {  useQueryClient } from "@tanstack/react-query";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Geist, Geist_Mono } from "next/font/google";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/scroll-area";
@@ -12,6 +9,9 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
 import UserProfile from "@/components/ui/profile-card";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
+import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { GetServerSidePropsContext } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,6 +52,7 @@ export default function Home() {
   //   },
   //   initialPageParam: 0, // Start fetching from the first page
   // });
+
   const refresh = () => {
     queryClient.resetQueries();
   };
@@ -96,16 +97,16 @@ export default function Home() {
           
         </div>
       </Tabs>
-<UserProfile
-      name="Sophia Zou"
-      handle="@sophiazou"
-      avatarUrl="/images/sophia-avatar.png"
-      stats={[
-        { label: "Workouts", value: 334 },
-        { label: "Followers", value: "14,281" },
-        { label: "Following", value: 23 },
-      ]}
-    />
+      <UserProfile
+        name="Sophia Zou"
+        handle="@sophiazou"
+        avatarUrl="/images/sophia-avatar.png"
+        stats={[
+          { label: "Workouts", value: 334 },
+          { label: "Followers", value: "14,281" },
+          { label: "Following", value: 23 },
+        ]}
+      />
       {/* Scroll area containing the feed. */}
       {/* {!posts || posts.pages.flat().length === 0 ? (
         <div>No posts available</div>
@@ -117,4 +118,33 @@ export default function Home() {
     </div>
     
   );
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // Create the supabase context that works specifically on the server
+  const supabase = createSupabaseServerClient(context);
+
+  // Attempt to load the user data
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  // If the user is not logged in, redirect them to the login page
+  if (userError || !userData) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+  // Return the user and profile as props
+  return {
+    props: {
+      user: userData.user,
+    },
+  };
+}
+
+function createSupabaseServerClient(context: GetServerSidePropsContext) {
+  return createServerSupabaseClient(context);
 }
