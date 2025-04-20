@@ -1,104 +1,46 @@
-import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/router";
-import Link from "next/link";
+import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
+import { useQueryClient } from "@tanstack/react-query";
 import { AtSign, Lock, User, UserPlus } from "lucide-react";
-import React from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
 
-export default function Signup() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export default function SignUpPage() {
+  // Create necessary hooks for clients and providers.
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createSupabaseComponentClient();
+  const queryClient = useQueryClient();
+  // Create states for each field in the form.
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
-  
-    try {
-      console.log("Signup attempt with:", { email, fullName });
-      
-      // Create the user in auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-  
-      if (authError) {
-        console.error("Auth signup error:", authError);
-        console.error("Auth error details:", {
-          message: authError.message,
-          status: authError.status,
-          name: authError.name
-        });
-        setError(authError.message);
-        return;
-      }
-  
-      console.log("Auth signup successful:", authData);
-  
-      if (authData.user) {
-        const userData = {
-          id: authData.user.id,
-          email: email,
-          full_name: fullName,
-          created_at: new Date().toISOString(),
-        };
-        
-        console.log("Attempting to insert user data:", userData);
-        
-        // Insert additional user data into the users table
-        const { data: profileData, error: profileError } = await supabase
-          .from("users")
-          .insert(userData)
-          .select();
-  
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-          console.error("Profile error details:", {
-            message: profileError.message,
-            code: profileError.code,
-            details: profileError.details,
-            hint: profileError.hint
-          });
-          setError(profileError.message);
-          return;
-        }
-  
-        console.log("Profile creation successful:", profileData);
-        
-        // Redirect to home page on successful signup
-        console.log("Signup complete, redirecting to home page");
-        router.push("/");
-      } else {
-        console.error("Auth data returned without user object:", authData);
-        setError("User account created but session not established");
-      }
-    } catch (err) {
-      console.error("Unexpected error during signup:", err);
-      if (err instanceof Error) {
-        console.error("Error details:", {
-          message: err.message,
-          stack: err.stack
-        });
-      }
-      setError("An unexpected error occurred");
-    } finally {
+    setError("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+
+    if (error) {
+      setError(error.message);
+      console.error(error);
       setIsLoading(false);
+      return;
     }
-  };
+    
+    queryClient.resetQueries({ queryKey: ["user_profile"] });
+    router.push("/");
+  }
 
   return (
     <div className="flex justify-center items-start min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -122,7 +64,7 @@ export default function Signup() {
           
           <div className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Full Name
               </Label>
               <div className="relative group">
@@ -130,10 +72,10 @@ export default function Signup() {
                   <User className="h-4 w-4 text-gray-400 group-focus-within:text-gray-600 dark:group-focus-within:text-gray-300" />
                 </div>
                 <Input
-                  id="fullName"
+                  id="name"
                   placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="pl-10 bg-transparent border-gray-200 dark:border-gray-700 rounded-xl focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
                   required
                 />
