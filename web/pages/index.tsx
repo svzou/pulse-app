@@ -1,39 +1,38 @@
 // Home page showing feed
-
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { RotateCcw } from "lucide-react";
 import UserProfile from "@/components/ui/profile-card";
-import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
+import { createClientComponentClient, SupabaseClient, User } from "@supabase/auth-helpers-nextjs";
 import { createServerSupabaseClient } from "@supabase/auth-helpers-nextjs";
 import { GetServerSidePropsContext } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useRouter } from "next/router";
+import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
+import { getProfileData } from "@/utils/supabase/queries/profile";
 
 enum HomePageTab {
-  FOR_YOU = "Feed",
+  FOR_YOU = "ForYou",
   FOLLOWING = "Following",
   LIKED = "Liked",
 }
 
-export default function Home() {
+// Define types for the props
+interface HomeProps {
+  user: any;
+  profile: any;
+}
+
+export default function Home({ user, profile }: HomeProps) {
   const queryClient = useQueryClient();
-  const supabase = createSupabaseComponentClient();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
-  // const fetchDataFn =
+  const [loading, setLoading] = useState(false);
+  const supabase = createClientComponentClient();
+
+   // const fetchDataFn =
   // activeTab === HomePageTab.FOR_YOU
   //   ? getFeed
   //   : activeTab === HomePageTab.FOLLOWING
@@ -53,15 +52,22 @@ export default function Home() {
   //   initialPageParam: 0, // Start fetching from the first page
   // });
 
-  const refresh = () => {
-    queryClient.resetQueries();
+  // Handle data refresh
+  const refresh = async () => {
+    setLoading(true);
+    queryClient.invalidateQueries();
+    
+    // Refresh the page to get updated data
+    router.replace(router.asPath);
+    
+    setLoading(false);
   };
     
   return (
     <div className="w-full mx-auto max-w-[600px] h-full">
       {/* Display all three tabs for each feed + the refresh button. */}
       <Tabs
-        value={activeTab.toString()}
+        value={activeTab}
         onValueChange={(tab) => setActiveTab(tab)}
         className="w-full mt-16"
       >
@@ -91,32 +97,48 @@ export default function Home() {
             size="sm"
             onClick={refresh}
             className="rounded-full w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            disabled={loading}
           >
-            <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            {loading ? (
+              <div className="w-5 h-5 border-t-2 border-b-2 border-gray-600 dark:border-gray-300 rounded-full animate-spin"></div>
+            ) : (
+              <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            )}
           </Button>
-          
         </div>
       </Tabs>
-      <UserProfile
-        name="Sophia Zou"
-        handle="@sophiazou"
-        avatarUrl="/images/sophia-avatar.png"
-        stats={[
-          { label: "Workouts", value: 334 },
-          { label: "Followers", value: "14,281" },
-          { label: "Following", value: 23 },
-        ]}
-      />
-      {/* Scroll area containing the feed. */}
-      {/* {!posts || posts.pages.flat().length === 0 ? (
-        <div>No posts available</div>
-      ) : ( */}
-        <ScrollArea className="mt-4 h-[70vh] w-full border bg-card text-card-foreground shadow-2xl">
-          {/* <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} /> */}
-        </ScrollArea>
-      {/* )} */}
+      
+      {user && profile ? (
+        <>
+          <UserProfile
+            name={profile.full_name || "User"}
+            handle={`@${profile.email.split('@')[0]}`}
+            avatarUrl="/images/default-avatar.png"
+            stats={[
+              { label: "Workouts", value: 0 },
+              { label: "Followers", value: 0 },
+              { label: "Following", value: 0 },
+            ]}
+          />
+          <ScrollArea className="mt-4 h-[70vh] w-full border bg-card text-card-foreground shadow-2xl">
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              Your feed will appear here.
+            </div>
+          </ScrollArea>
+        </>
+      ) : (
+        <div className="mt-10 text-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Welcome!</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Please sign in to see your feed.</p>
+          <Button 
+            onClick={() => router.push('/login')}
+            className="mt-4 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
+          >
+            Sign In
+          </Button>
+        </div>
+      )}
     </div>
-    
   );
 }
 
@@ -137,14 +159,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     };
   }
 
+  // Load the profile data
+  const profile = await getProfileData(
+    supabase,
+    userData.user,
+    userData.user.id
+  );
+
   // Return the user and profile as props
   return {
     props: {
       user: userData.user,
+      profile: profile,
     },
   };
-}
-
-function createSupabaseServerClient(context: GetServerSidePropsContext) {
-  return createServerSupabaseClient(context);
 }

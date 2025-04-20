@@ -1,59 +1,62 @@
-import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/router";
+import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
+import { useQueryClient } from "@tanstack/react-query";
+import { AtSign, Lock, LogIn, HeartPulse } from "lucide-react";
 import Link from "next/link";
-import { AtSign, Lock, LogIn } from "lucide-react";
+import { useRouter } from "next/router";
+import { useState } from "react";
 
-export default function Login() {
+export default function LoginPage() {
+  // Create necessary hooks for clients and providers.
+  const router = useRouter();
+  const supabase = createSupabaseComponentClient();
+  const queryClient = useQueryClient();
+  // Create states for each field in the form.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const supabase = createClientComponentClient();
+  const [error, setError] = useState("");
 
-  interface LoginFormEvent extends React.FormEvent<HTMLFormElement> {}
-
-  const handleLogin = async (e: LoginFormEvent): Promise<void> => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
-
-    try {
-      const { error }: { error: { message: string } | null } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      // Redirect to home page on successful login
-      router.push("/");
-    } catch (err) {
-      setError("An unexpected error occurred");
-      console.error(err);
-    } finally {
+    setError("");
+    
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email, 
+      password 
+    });
+    
+    if (error) {
+      setError(error.message);
+      console.error(error);
       setIsLoading(false);
+      return;
     }
+    
+    queryClient.resetQueries({ queryKey: ["user_profile"] });
+    router.push('/');
   };
 
   return (
     <div className="flex justify-center items-start min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-lg p-8 space-y-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl backdrop-blur-sm border border-gray-100 dark:border-gray-800">
-        <div className="text-center space-y-3">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 mb-3">
-            <LogIn className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+        <div className="text-center space-y-6">
+          {/* Pulse Logo at the top */}
+          <div className="inline-flex items-center justify-center gap-3">
+            <HeartPulse className="w-8 h-8 text-sky-700" />
+            <p className="text-2xl font-bold text-sky-700">Pulse</p>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Welcome back</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-            Sign in to your account to continue
-          </p>
+          
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Welcome back</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+              Sign in to your account to continue
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleLogin} className="mt-8 space-y-6">

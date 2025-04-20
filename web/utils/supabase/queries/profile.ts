@@ -1,160 +1,172 @@
 /**
  * /queries/profile contains all of the Supabase queries for
- * creating, reading, updating, and deleting data in our
- * database relating to profiles.
+ * creating, reading, updating, and deleting data related to user profiles.
  */
 
 import { SupabaseClient, User } from "@supabase/supabase-js";
-import { z } from "zod";
-import { emptyWorkoutAuthor, WorkoutAuthor } from "../models/workout";
-import { Workout } from "../models/workout";
+
+// Define a type for the user profile based on your database structure
+export type UserProfile = {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url?: string | null;
+  created_at: string;
+  bio?: string | null;
+  fitness_level?: string | null;
+};
 
 /**
  * Loads data for a specific profile (user) given their ID.
  */
 export const getProfileData = async (
-  supabase: SupabaseClient,
-  user: User,
-  profileId: string
-): Promise<z.infer<typeof WorkoutAuthor>> => {
-  try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", profileId)
-      .single();
+  supabase: SupabaseClient,
+  user: User,
+  profileId: string
+): Promise<UserProfile | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", profileId)
+      .single();
 
-    if (error) {
-      throw new Error(`Failed to fetch profile data: ${error.message}`);
-    }
+    if (error) {
+      console.error(`Failed to fetch profile data: ${error.message}`);
+      return null;
+    }
 
-    if (!data) {
-      throw new Error("Profile not found");
-    }
-
-    return WorkoutAuthor.parse(data);
-  } catch (err) {
-    console.error("Error in getProfileData:", err);
-    return WorkoutAuthor.parse(emptyWorkoutAuthor);
-  }
+    return data as UserProfile;
+  } catch (err) {
+    console.error("Error in getProfileData:", err);
+    return null;
+  }
 };
 
 /**
  * Retrieves all accounts the user is following.
  */
 export const getFollowing = async (
-  supabase: SupabaseClient,
-  user: User
-): Promise<z.infer<typeof WorkoutAuthor>[]> => {
-  try {
-    const { data, error } = await supabase
-      .from("following")
-      .select(`
-        following_id (
-          id, email,
-          full_name,
-          avatar_url, created_at, 
-          bio,
-          fitness_level
-        )
-      `)
-      .eq("follower_id", user.id);
+  supabase: SupabaseClient,
+  user: User
+): Promise<UserProfile[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("following")
+      .select(
+        `
+        following_id,
+        users!following_id(*)
+      `
+      )
+      .eq("follower_id", user.id);
 
-    if (error) {
-      throw new Error(`Failed to fetch following: ${error.message}`);
-    }
+    if (error) {
+      console.error(`Failed to fetch following: ${error.message}`);
+      return [];
+    }
 
-    const followingProfiles = data.map((entry) => entry.following_id);
-    return WorkoutAuthor.array().parse(followingProfiles);
-  } catch (err) {
-    console.error("Error in getFollowing:", err);
-    return [];
-  }
+    // Extract the user profiles from the joined data
+    return data.flatMap((item) => item.users) as UserProfile[];
+  } catch (err) {
+    console.error("Error in getFollowing:", err);
+    return [];
+  }
 };
 
 /**
- * Loads data for a user's workout feed.
- * This is paginated: loads 25 workouts at a time.
+ * Check if the current user is following a specific profile.
  */
-export const getProfilePosts = async (
-  supabase: SupabaseClient,
-  user: User,
-  profileId: string,
-  cursor: number = 0
-): Promise<z.infer<typeof Workout>[]> => {
-  try {
-    const { data, error } = await supabase
-      .from("workouts")
-      .select(`
-        *,
-        users:user_id (
-          id,
-          full_name,
-          avatar_url
-        ),
-        likes (
-          user_id
-        )
-      `)
-      .eq("user_id", profileId)
-      .order("created_at", { ascending: false })
-      .range(cursor, cursor + 24);
+export const isFollowing = async (
+  supabase: SupabaseClient,
+  user: User,
+  profileId: string
+): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from("following")
+      .select("*")
+      .eq("follower_id", user.id)
+      .eq("following_id", profileId)
+      .maybeSingle();
 
-    if (error) {
-      throw new Error(`Failed to fetch workouts: ${error.message}`);
-    }
+    if (error) {
+      console.error(`Failed to check following status: ${error.message}`);
+      return false;
+    }
 
-    return Workout.array().parse(data);
-  } catch (err) {
-    console.error("Error in getProfilePosts:", err);
-    return [];
-  }
+    return !!data; // Return true if data exists (user is following), false otherwise
+  } catch (err) {
+    console.error("Error in isFollowing:", err);
+    return false;
+  }
 };
 
 /**
  * Toggles following/unfollowing a profile.
  */
 export const toggleFollowing = async (
-  supabase: SupabaseClient,
-  user: User,
-  profileId: string
+  supabase: SupabaseClient,
+  user: User,
+  profileId: string
 ): Promise<void> => {
-  try {
-    const { data: existingFollow, error } = await supabase
-      .from("following")
-      .select("*")
-      .eq("follower_id", user.id)
-      .eq("following_id", profileId)
-      .maybeSingle();
+  try {
+    // Check if already following
+    const isCurrentlyFollowing = await isFollowing(supabase, user, profileId);
 
-    if (error) throw error;
+    if (isCurrentlyFollowing) {
+      // Unfollow
+      const { error: deleteError } = await supabase
+        .from("following")
+        .delete()
+        .eq("follower_id", user.id)
+        .eq("following_id", profileId);
 
-    if (existingFollow) {
-      const { error: deleteError } = await supabase
-        .from("following")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("following_id", profileId);
+      if (deleteError) {
+        throw new Error(`Unfollow failed: ${deleteError.message}`);
+      }
+    } else {
+      // Follow
+      const { error: insertError } = await supabase.from("following").insert({
+        follower_id: user.id,
+        following_id: profileId,
+      });
 
-      if (deleteError) {
-        throw new Error(`Unfollow failed: ${deleteError.message}`);
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from("following")
-        .insert({
-          follower_id: user.id,
-          following_id: profileId,
-        });
+      if (insertError) {
+        throw new Error(`Follow failed: ${insertError.message}`);
+      }
+    }
+  } catch (err) {
+    console.error("Toggle following error:", err);
+    throw err;
+  }
+};
 
-      if (insertError) {
-        throw new Error(`Follow failed: ${insertError.message}`);
-      }
-    }
-  } catch (err) {
-    console.error("Toggle following error:", err);
-    throw err;
-  }
+/**
+ * Updates a user's profile information.
+ */
+export const updateProfile = async (
+  supabase: SupabaseClient,
+  user: User,
+  updates: Partial<UserProfile>
+): Promise<UserProfile | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", user.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update profile: ${error.message}`);
+    }
+
+    return data as UserProfile;
+  } catch (err) {
+    console.error("Update profile error:", err);
+    return null;
+  }
 };
 
 /**
@@ -162,36 +174,49 @@ export const toggleFollowing = async (
  * If no file is provided, the avatar is removed.
  */
 export const updateProfilePicture = async (
-  supabase: SupabaseClient,
-  user: User,
-  file: File | null
-): Promise<void> => {
-  if (!file) {
-    const { error } = await supabase
-      .from("users")
-      .update({ avatar_url: null })
-      .eq("id", user.id);
-    if (error) {
-      throw new Error(`Failed to delete avatar: ${error.message}`);
-    }
-    return;
-  }
+  supabase: SupabaseClient,
+  user: User,
+  file: File | null
+): Promise<string | null> => {
+  try {
+    if (!file) {
+      // Remove the avatar
+      const { error } = await supabase
+        .from("users")
+        .update({ avatar_url: null })
+        .eq("id", user.id);
 
-  const filePath = `${user.id}`;
-  const { data: fileData, error: uploadError } = await supabase.storage
-    .from("avatars")
-    .upload(filePath, file, { upsert: true });
+      if (error) {
+        throw new Error(`Failed to delete avatar: ${error.message}`);
+      }
 
-  if (uploadError) {
-    throw new Error(`Upload failed: ${uploadError.message}`);
-  }
+      return null;
+    }
 
-  const { error: updateError } = await supabase
-    .from("users")
-    .update({ avatar_url: fileData.path })
-    .eq("id", user.id);
+    // Upload the new avatar
+    const filePath = `${user.id}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
 
-  if (updateError) {
-    throw new Error(`Update URL failed: ${updateError.message}`);
-  }
+    if (uploadError) {
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+
+    // Update the user's avatar_url
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ avatar_url: filePath })
+      .eq("id", user.id);
+
+    if (updateError) {
+      throw new Error(`Update URL failed: ${updateError.message}`);
+    }
+
+    // Return the path to the avatar
+    return filePath;
+  } catch (err) {
+    console.error("Update avatar error:", err);
+    throw err;
+  }
 };
