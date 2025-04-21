@@ -206,7 +206,7 @@ export const getFollowingFeed = async (
 ): Promise<z.infer<typeof Workout>[]> => {
   // ... your implementation here ...
   const { data: following, error: followError } = await supabase
-    .from("follow")
+    .from("following")
     .select("following_id")
     .eq("follower_id", user.id);
   if (followError)
@@ -214,7 +214,7 @@ export const getFollowingFeed = async (
   if (!following || following.length === 0) return [];
   const followingIds = following.map((f) => f.following_id);
   const { data, error } = await supabase
-    .from("Workout")
+    .from("workouts")
     .select(
       `
         id,
@@ -231,7 +231,7 @@ export const getFollowingFeed = async (
       `
     )
     .in("author_id", followingIds)
-    .order("Workouted_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .range(cursor, cursor + 24);
   if (error)
     throw new Error(`Failed to fetch following feed: ${error.message}`);

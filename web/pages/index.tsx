@@ -2,10 +2,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import UserProfile from '@/components/ui/profile-card';
-import { createClientComponentClient, SupabaseClient, User } from '@supabase/auth-helpers-nextjs';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { GetServerSidePropsContext } from 'next';
 import { useRouter } from 'next/router';
 import { createSupabaseServerClient } from '@/utils/supabase/clients/server-props';
@@ -25,13 +25,11 @@ interface HomeProps {
   profile: any;
 }
 
-
 export default function Home({ user, profile }: HomeProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   const [loading, setLoading] = useState(false);
-
   const supabase = createClientComponentClient();
 
   const fetchDataFn =
@@ -52,6 +50,27 @@ export default function Home({ user, profile }: HomeProps) {
     initialPageParam: 0,
   });
 
+  // Fetch recent workouts and merge them into the feed
+  const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
+  useEffect(() => {
+    if (user?.id) {
+      const fetchRecentWorkouts = async () => {
+        const { data: recentWorkoutsData, error } = await supabase
+          .from("workouts")
+          .select("*")
+
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (!error && recentWorkoutsData) {
+          console.log("Workouts loaded:", recentWorkoutsData);
+          setRecentWorkouts(recentWorkoutsData);
+        }
+      };
+      fetchRecentWorkouts();
+    }
+  }, [user?.id, supabase]);
+
   const refresh = async () => {
     setLoading(true);
     await queryClient.invalidateQueries({ queryKey: ['feed', activeTab, user?.id] });
@@ -59,28 +78,34 @@ export default function Home({ user, profile }: HomeProps) {
     setLoading(false);
   };
 
-  const renderWorkouts = (workouts: any[] | undefined) => (
-    <ScrollArea className="mt-4 h-[70vh] w-full border bg-card text-card-foreground shadow-2xl">
-      <div className="space-y-4 p-4">
-        {workouts?.flat().map((workout: any) => (
-          <Card key={workout.id} className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold">{workout.title}</h3>
-                <p className="text-gray-600">{workout.description || 'No description'}</p>
-                <p className="text-sm text-gray-500 mt-2">Duration: {workout.duration_minutes} minutes</p>
-                <p className="text-sm text-gray-500">By: {workout.author.name} (@{workout.author.handle})</p>
-              </div>
-              <span className="text-sm text-gray-500">{new Date(workout.created_at).toLocaleDateString()}</span>
-            </div>
-          </Card>
-        ))}
-        {(!workouts || workouts.flat().length === 0) && (
-          <p className="text-center text-gray-500">No workouts found.</p>
-        )}
-      </div>
-    </ScrollArea>
-  );
+  const renderWorkouts = (workouts: any[] | undefined, additionalWorkouts: any[] = []) => {
+    // Combine the fetched posts and recent workouts
+    const allWorkouts = [...(additionalWorkouts || []), ...(workouts?.flat() || [])];
+    
+    return (
+      <ScrollArea className="mt-4 h-[70vh] w-full border bg-card text-card-foreground shadow-2xl">
+        <div className="space-y-4 p-4">
+          {allWorkouts.length > 0 ? (
+            allWorkouts.map((workout: any) => (
+              <Card key={workout.id} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">{workout.title}</h3>
+                    <p className="text-gray-600">{workout.description || 'No description'}</p>
+                    <p className="text-sm text-gray-500 mt-2">Duration: {workout.duration_minutes} minutes</p>
+                    <p className="text-sm text-gray-500">By: {workout.user_id || 'Unknown'}</p>
+                  </div>
+                  <span className="text-sm text-gray-500">{new Date(workout.created_at).toLocaleDateString()}</span>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p className="text-center text-gray-500">No workouts found.</p>
+          )}
+        </div>
+      </ScrollArea>
+    );
+  };
 
   return (
     <div className="w-full mx-auto max-w-[600px] h-full">
@@ -122,7 +147,7 @@ export default function Home({ user, profile }: HomeProps) {
         </div>
 
         <TabsContent value="ForYou">
-          {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the For You feed.</div>}
+          {user ? renderWorkouts(posts?.pages, recentWorkouts) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the For You feed.</div>}
         </TabsContent>
         <TabsContent value="Following">
           {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Following feed.</div>}
@@ -131,34 +156,6 @@ export default function Home({ user, profile }: HomeProps) {
           {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Liked feed.</div>}
         </TabsContent>
       </Tabs>
-
-      {user && profile ? (
-        <>
-          <UserProfile
-            name={profile.full_name || 'User'}
-            handle={`@${profile.email.split('@')[0]}`}
-            avatarUrl="/images/default-avatar.png"
-            stats={[
-              { label: 'Workouts', value: 0 },
-              { label: 'Followers', value: profile.Followers?.length || 0 },
-              { label: 'Following', value: profile.Following?.length || 0 },
-            ]}
-          />
-          {renderWorkouts(posts?.pages)}
-        </>
-      ) : (
-        <div className="mt-10 text-center">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Welcome!</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Please sign in to see your feed.</p>
-          <Button
-            onClick={() => router.push('/login')}
-            className="mt-4 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
-          >
-            Sign In
-          </Button>
-          {renderWorkouts(posts?.pages)}
-        </div>
-      )}
     </div>
   );
 }
