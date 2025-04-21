@@ -1,39 +1,45 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState } from 'react';
-import { RotateCcw } from 'lucide-react';
-import UserProfile from '@/components/ui/profile-card';
-import { createClientComponentClient, SupabaseClient, User } from '@supabase/auth-helpers-nextjs';
-import { GetServerSidePropsContext } from 'next';
-import { useRouter } from 'next/router';
-import { createSupabaseServerClient } from '@/utils/supabase/clients/server-props';
-import { getProfileData } from '@/utils/supabase/queries/profile';
-import { Card } from '@/components/ui/card';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
+// Home page showing feed
+
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
+import { GetServerSidePropsContext } from "next";
+import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
+import { getProfileData } from "@/utils/supabase/queries/profile";
+import { User } from "@supabase/supabase-js";
+import { RotateCcw } from "lucide-react";
+import Feed from "@/pages/feed";
+import { useRouter } from "next/router";
+import UserProfile from "@/components/ui/profile-card";
+import { 
+  getFeed, 
+  getFollowingFeed, 
+  getLikesFeed
+} from "@/utils/supabase/queries/workout";
 
 enum HomePageTab {
-  FOR_YOU = 'ForYou',
-  FOLLOWING = 'Following',
-  LIKED = 'Liked',
+  FOR_YOU = "ForYou",
+  FOLLOWING = "Following",
+  LIKED = "Liked",
 }
 
-interface HomeProps {
-  user: any;
-  profile: any;
-}
+type HomePageProps = { 
+  user: User; 
+  profile: any 
+};
 
-
-export default function Home({ user, profile }: HomeProps) {
+export default function Home({ user, profile }: HomePageProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   const [loading, setLoading] = useState(false);
-
-  const supabase = createClientComponentClient();
-
+  
+  const supabase = createSupabaseComponentClient();
+  
+  // Determine which data fetching function should be used
   const fetchDataFn =
     activeTab === HomePageTab.FOR_YOU
       ? getFeed
@@ -41,15 +47,19 @@ export default function Home({ user, profile }: HomeProps) {
       ? getFollowingFeed
       : getLikesFeed;
 
-  const { data: posts, fetchNextPage } = useInfiniteQuery({
-    queryKey: ['feed', activeTab, user?.id],
+  // Infinite query to fetch the workouts from the server
+  const { data: workouts, fetchNextPage } = useInfiniteQuery({
+    queryKey: ['feed', activeTab, user?.id], // Include the active tab in the query key
     queryFn: async ({ pageParam = 0 }) => {
+      // Fetch workouts using the appropriate function
       return await fetchDataFn(supabase, user, pageParam);
     },
     getNextPageParam: (lastPage, allPages) => {
+      // Determine the next page to fetch
+      // If the last page has fewer than 25 workouts, there are no more pages
       return lastPage.length < 25 ? undefined : allPages.length * 25;
     },
-    initialPageParam: 0,
+    initialPageParam: 0, // Start fetching from the first page
   });
 
   const refresh = async () => {
@@ -58,30 +68,7 @@ export default function Home({ user, profile }: HomeProps) {
     router.replace(router.asPath);
     setLoading(false);
   };
-
-  const renderWorkouts = (workouts: any[] | undefined) => (
-    <ScrollArea className="mt-4 h-[70vh] w-full border bg-card text-card-foreground shadow-2xl">
-      <div className="space-y-4 p-4">
-        {workouts?.flat().map((workout: any) => (
-          <Card key={workout.id} className="p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold">{workout.title}</h3>
-                <p className="text-gray-600">{workout.description || 'No description'}</p>
-                <p className="text-sm text-gray-500 mt-2">Duration: {workout.duration_minutes} minutes</p>
-                <p className="text-sm text-gray-500">By: {workout.author.name} (@{workout.author.handle})</p>
-              </div>
-              <span className="text-sm text-gray-500">{new Date(workout.created_at).toLocaleDateString()}</span>
-            </div>
-          </Card>
-        ))}
-        {(!workouts || workouts.flat().length === 0) && (
-          <p className="text-center text-gray-500">No workouts found.</p>
-        )}
-      </div>
-    </ScrollArea>
-  );
-
+    
   return (
     <div className="w-full mx-auto max-w-[600px] h-full">
       <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full mt-16">
@@ -122,30 +109,45 @@ export default function Home({ user, profile }: HomeProps) {
         </div>
 
         <TabsContent value="ForYou">
-          {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the For You feed.</div>}
+          {user ? (
+            <Feed user={user} workouts={workouts} fetchNextPage={fetchNextPage} />
+          ) : (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              Please sign in to view the For You feed.
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="Following">
-          {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Following feed.</div>}
+          {user ? (
+            <Feed user={user} workouts={workouts} fetchNextPage={fetchNextPage} />
+          ) : (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              Please sign in to view the Following feed.
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="Liked">
-          {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Liked feed.</div>}
+          {user ? (
+            <Feed user={user} workouts={workouts} fetchNextPage={fetchNextPage} />
+          ) : (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              Please sign in to view the Liked feed.
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
       {user && profile ? (
-        <>
-          <UserProfile
-            name={profile.full_name || 'User'}
-            handle={`@${profile.email.split('@')[0]}`}
-            avatarUrl="/images/default-avatar.png"
-            stats={[
-              { label: 'Workouts', value: 0 },
-              { label: 'Followers', value: profile.Followers?.length || 0 },
-              { label: 'Following', value: profile.Following?.length || 0 },
-            ]}
-          />
-          {renderWorkouts(posts?.pages)}
-        </>
+        <UserProfile
+          name={profile.full_name || 'User'}
+          handle={`@${profile.email.split('@')[0]}`}
+          avatarUrl="/images/default-avatar.png"
+          stats={[
+            { label: 'Workouts', value: 0 },
+            { label: 'Followers', value: profile.Followers?.length || 0 },
+            { label: 'Following', value: profile.Following?.length || 0 },
+          ]}
+        />
       ) : (
         <div className="mt-10 text-center">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Welcome!</h2>
@@ -156,7 +158,6 @@ export default function Home({ user, profile }: HomeProps) {
           >
             Sign In
           </Button>
-          {renderWorkouts(posts?.pages)}
         </div>
       )}
     </div>
@@ -169,9 +170,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (userError || !userData) {
     return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
+      props: {
+        user: null,
+        profile: null,
       },
     };
   }
