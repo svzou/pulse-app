@@ -48,6 +48,7 @@ export const Workout = z.object({
   duration_minutes: z.number(),
   visibility: z.string(),
   attachment_url: z.string(),
+
 });
 
 /** Defines thes schema for following data. */
