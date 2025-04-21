@@ -1,25 +1,20 @@
-"use client"
-import { HeartPulse } from "lucide-react";
+"use client";
+import { HeartPulse, User } from "lucide-react";
 
-import * as React from "react"
+import * as React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
-
   BookOpen,
   Bot,
-
   Frame,
   GalleryVerticalEnd,
   Map,
   PieChart,
-
   SquareTerminal,
-} from "lucide-react"
-
+} from "lucide-react";
 
 import Link from "next/link";
-import NavProjects from "@/components/nav-projects"
-
+import NavProjects from "@/components/nav-projects";
 
 import {
   Sidebar,
@@ -27,9 +22,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-
-
+} from "@/components/ui/sidebar";
 
 // This is sample data.
 const data = {
@@ -43,7 +36,7 @@ const data = {
       name: "Acme Inc",
       logo: GalleryVerticalEnd,
       plan: "Enterprise",
-    }
+    },
   ],
   navMain: [
     {
@@ -108,7 +101,6 @@ const data = {
         },
       ],
     },
-  
   ],
   projects: [
     {
@@ -126,21 +118,26 @@ const data = {
       url: "#",
       icon: Map,
     },
+    {
+      name: "Profile",
+      url: "/profile",
+      icon: User,
+    },
   ],
-}
+};
 
-export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export default function AppSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-      <Link href="/" className="flex items-center gap-3">
-        <HeartPulse className="w-6 h-6 text-sky-700" />
-        <p className="text-lg font-bold text-sky-700 top-5">Pulse</p>
-      </Link> 
-      
+        <Link href="/" className="flex items-center gap-3">
+          <HeartPulse className="w-6 h-6 text-sky-700" />
+          <p className="text-lg font-bold text-sky-700 top-5">Pulse</p>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
-
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
@@ -148,5 +145,5 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
