@@ -23,7 +23,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
+import { useRouter } from "next/router";
 // This is sample data.
 const data = {
   user: {
@@ -129,6 +129,11 @@ const data = {
 export default function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
+  const hideSidebarRoutes = ['/login', '/signup'];
+  if (hideSidebarRoutes.includes(router.pathname)) {
+    return null;
+  }
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
