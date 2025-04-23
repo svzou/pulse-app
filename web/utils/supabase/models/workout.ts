@@ -2,22 +2,6 @@
  * This file contains all of the Zod validation models
  * used to ensure that our Supabase query functions
  * ultimately return data in the correct format.
- *
- * Zod is the industry standard for schema validation.
- * It allows for easy casting of and validation of data.
- *
- * Zod types are defined as objects that contains fields.
- * We can compose Zod types as well as shown below.
- *
- * To access the pure type of any Zod model, we can use:
- * z.infer<typeof Model>
- *
- * In the future, we will use Zod in many more places, so
- * it is good to introduce it here.
- *
- * @author Ajay Gandecha <agandecha@unc.edu>
- * @license MIT
- * @see https://comp426-25s.github.io/
  */
 
 import { z } from "zod";
@@ -51,7 +35,6 @@ export const Workout = z.object({
   duration_minutes: z.number(),
   visibility: z.string(),
   attachment_url: z.string(),
-
 });
 
 /** Defines the schema for following data. */
@@ -66,7 +49,6 @@ export const Following = z.object({
  * Helper variables containing empty models
 
  */
-
 export const emptyWorkoutAuthor = WorkoutAuthor.parse({
   id: "",
   email: "",
@@ -94,7 +76,9 @@ export const emptyWorkout = Workout.parse({
 });
 
 
+
 export const emptyFollowing = Following.parse({
   follower_id: "",
   following_id: "",
 });
+
