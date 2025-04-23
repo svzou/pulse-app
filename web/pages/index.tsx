@@ -13,8 +13,11 @@ import { getProfileData } from '@/utils/supabase/queries/profile';
 import { Card } from '@/components/ui/card';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
+
+import Feed from './feed';
+
 import { User } from "@supabase/supabase-js";
-import Feed from "@/pages/feed";
+
 
 enum HomePageTab {
   FOR_YOU = "ForYou",
@@ -171,9 +174,10 @@ export default function Home({ user, profile }: HomePageProps) {
           )}
         </TabsContent>
         <TabsContent value="Liked">
-          {user ? (
-            <Feed user={user} workouts={workouts} fetchNextPage={fetchNextPage} />
-          ) : (
+        {user ? (
+             <Feed user={user} workouts={posts} fetchNextPage={fetchNextPage} />) : (
+
+
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
               Please sign in to view the Liked feed.
             </div>

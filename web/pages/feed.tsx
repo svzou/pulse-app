@@ -23,7 +23,9 @@ type WorkoutWithAuthor = z.infer<typeof Workout> & {
 
 type FeedProps = {
   user: User;
-  workouts: InfiniteData<WorkoutWithAuthor[]> | undefined;
+
+  workouts: InfiniteData<WorkoutWithAuthor[], number> | undefined;
+
   fetchNextPage: () => void;
 };
 
