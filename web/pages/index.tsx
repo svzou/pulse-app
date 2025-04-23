@@ -13,31 +13,26 @@ import { getProfileData } from '@/utils/supabase/queries/profile';
 import { Card } from '@/components/ui/card';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
-
 import Feed from './feed';
 
-import { User } from "@supabase/supabase-js";
-
-
 enum HomePageTab {
-  FOR_YOU = "ForYou",
-  FOLLOWING = "Following",
-  LIKED = "Liked",
+  FOR_YOU = 'ForYou',
+  FOLLOWING = 'Following',
+  LIKED = 'Liked',
 }
 
-type HomePageProps = { 
-  user: User; 
-  profile: any 
-};
+interface HomeProps {
+  user: any;
+  profile: any;
+}
 
-export default function Home({ user, profile }: HomePageProps) {
+export default function Home({ user, profile }: HomeProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   const [loading, setLoading] = useState(false);
   const supabase = createClientComponentClient();
 
-  // Determine which data fetching function should be used
   const fetchDataFn =
     activeTab === HomePageTab.FOR_YOU
       ? getFeed
@@ -45,19 +40,15 @@ export default function Home({ user, profile }: HomePageProps) {
       ? getFollowingFeed
       : getLikesFeed;
 
-  // Infinite query to fetch the workouts from the server
-  const { data: workouts, fetchNextPage } = useInfiniteQuery({
-    queryKey: ['feed', activeTab, user?.id], // Include the active tab in the query key
+  const { data: posts, fetchNextPage } = useInfiniteQuery({
+    queryKey: ['feed', activeTab, user?.id],
     queryFn: async ({ pageParam = 0 }) => {
-      // Fetch workouts using the appropriate function
       return await fetchDataFn(supabase, user, pageParam);
     },
     getNextPageParam: (lastPage, allPages) => {
-      // Determine the next page to fetch
-      // If the last page has fewer than 25 workouts, there are no more pages
       return lastPage.length < 25 ? undefined : allPages.length * 25;
     },
-    initialPageParam: 0, // Start fetching from the first page
+    initialPageParam: 0,
   });
 
   // Fetch recent workouts and merge them into the feed
@@ -68,6 +59,7 @@ export default function Home({ user, profile }: HomePageProps) {
         const { data: recentWorkoutsData, error } = await supabase
           .from("workouts")
           .select("*")
+
           .order("created_at", { ascending: false })
           .limit(5);
 
@@ -156,35 +148,20 @@ export default function Home({ user, profile }: HomePageProps) {
         </div>
 
         <TabsContent value="ForYou">
-          {user ? (
-            <Feed user={user} workouts={workouts} fetchNextPage={fetchNextPage} />
-          ) : (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              Please sign in to view the For You feed.
-            </div>
-          )}
+          {user ? renderWorkouts(posts?.pages, recentWorkouts) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the For You feed.</div>}
         </TabsContent>
         <TabsContent value="Following">
-          {user ? (
-            <Feed user={user} workouts={workouts} fetchNextPage={fetchNextPage} />
-          ) : (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              Please sign in to view the Following feed.
-            </div>
-          )}
+          {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Following feed.</div>}
         </TabsContent>
         <TabsContent value="Liked">
         {user ? (
              <Feed user={user} workouts={posts} fetchNextPage={fetchNextPage} />) : (
-
-
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
               Please sign in to view the Liked feed.
             </div>
           )}
         </TabsContent>
       </Tabs>
-
       {user && profile ? (
         <UserProfile
           name={profile.full_name || 'User'}
@@ -218,9 +195,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   if (userError || !userData) {
     return {
-      props: {
-        user: null,
-        profile: null,
+      redirect: {
+        destination: '/login',
+        permanent: false,
       },
     };
   }
