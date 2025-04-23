@@ -13,6 +13,7 @@ import { getProfileData } from '@/utils/supabase/queries/profile';
 import { Card } from '@/components/ui/card';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
+import Feed from './feed';
 
 enum HomePageTab {
   FOR_YOU = 'ForYou',
@@ -153,9 +154,37 @@ export default function Home({ user, profile }: HomeProps) {
           {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Following feed.</div>}
         </TabsContent>
         <TabsContent value="Liked">
-          {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Liked feed.</div>}
+        {user ? (
+             <Feed user={user} workouts={posts} fetchNextPage={fetchNextPage} />) : (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              Please sign in to view the Liked feed.
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+      {user && profile ? (
+        <UserProfile
+          name={profile.full_name || 'User'}
+          handle={`@${profile.email.split('@')[0]}`}
+          avatarUrl="/images/default-avatar.png"
+          stats={[
+            { label: 'Workouts', value: 0 },
+            { label: 'Followers', value: profile.Followers?.length || 0 },
+            { label: 'Following', value: profile.Following?.length || 0 },
+          ]}
+        />
+      ) : (
+        <div className="mt-10 text-center">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Welcome!</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Please sign in to see your feed.</p>
+          <Button
+            onClick={() => router.push('/login')}
+            className="mt-4 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
+          >
+            Sign In
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

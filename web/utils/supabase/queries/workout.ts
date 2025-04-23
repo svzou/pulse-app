@@ -290,43 +290,85 @@ export const getLikesFeed = async (
 ): Promise<z.infer<typeof Workout>[]> => {
   // ... your implementation here ...
   try {
-    const { data: likesData, error: likesError } = await supabase
-      .from("like")
-      .select("Workout_id")
-      .eq("profile_id", user.id);
+    // Get the list of workout IDs the user has liked
+    const { data: likedWorkoutIds, error: likesError } = await supabase
+      .from("likes")
+      .select("workout_id")
+      .eq("user_id", user.id);
+
     if (likesError) {
-      throw new Error(`Failed to fetch liked Workouts: ${likesError.message}`);
-    }
-    if (!likesData || likesData.length === 0) {
+      console.error("Error fetching likes:", likesError);
       return [];
     }
-    const likedWorkoutIds = likesData.map((like) => like.Workout_id);
-    const { data: WorkoutsData, error: WorkoutsError } = await supabase
-      .from("Workout")
-      .select(
-        `
-        *,
-        author:profile!Workout_author_id_fkey (*),
-        likes:like (profile_id)
-      `
-      )
-      .in("id", likedWorkoutIds)
-      .order("Workouted_at", { ascending: false })
+     // If user hasn't liked any workouts, return empty array
+     if (!likedWorkoutIds || likedWorkoutIds.length === 0) {
+      return [];
+
+    }
+
+
+
+    // Extract the workout IDs
+    const workoutIds = likedWorkoutIds.map((like) => like.workout_id);
+
+    // Query the liked workouts
+    const { data: workoutsData, error: workoutsError } = await supabase
+      .from("workouts")
+      .select("*")
+      .in("id", workoutIds)
+      .order("created_at", { ascending: false })
       .range(cursor, cursor + 24);
-    if (WorkoutsError) {
-      throw new Error(`Failed to fetch Workouts: ${WorkoutsError.message}`);
-    }
-    if (!WorkoutsData || WorkoutsData.length === 0) {
+
+    if (workoutsError) {
+      console.error("Error fetching liked workouts:", workoutsError);
       return [];
     }
-    const validatedWorkouts = Workout.array().parse(WorkoutsData);
-    return validatedWorkouts;
-  } catch (err) {
-    if (err instanceof Error) {
-      throw new Error(`Failed to toggle like: ${err.message}`);
-    } else {
-      throw new Error(`Failed to toggle like: Unknown error`);
+
+    if (!workoutsData || workoutsData.length === 0) {
+      return [];
     }
+
+    // For each workout, fetch the author
+    const workoutsWithAuthors = await Promise.all(
+      workoutsData.map(async (workout) => {
+        // Get the author for this workout
+        const { data: authorData, error: authorError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", workout.user_id)
+          .single();
+
+        if (authorError) {
+          console.error(
+            `Error fetching author for workout ${workout.id}:`,
+            authorError
+          );
+          return {
+            ...workout,
+            author: {
+              id: "",
+              email: "",
+              full_name: "Unknown User",
+              avatar_url: null,
+              created_at: new Date().toISOString(),
+              bio: null,
+              fitness_level: null,
+              updated_at: new Date().toISOString(),
+            },
+          };
+        }
+
+        return {
+          ...workout,
+          author: authorData,
+        };
+      })
+    );
+
+    return workoutsWithAuthors;
+  } catch (err) {
+    console.error("Unexpected error fetching likes feed:", err);
+    return [];
   }
 };
 
@@ -360,9 +402,9 @@ export const toggleLike = async (
   // ... your implementation here ...
   try {
     const { data: likeExists, error: toggleError } = await supabase
-      .from("like")
-      .select("Workout_id, profile_id")
-      .eq("Workout_id", WorkoutId)
+      .from("likes")
+      .select("workout_id, profile_id")
+      .eq("workout_id", WorkoutId)
       .eq("profile_id", user.id)
       .maybeSingle();
     if (toggleError) {
@@ -370,9 +412,9 @@ export const toggleLike = async (
     }
     if (likeExists) {
       const { error: deleteError } = await supabase
-        .from("like")
+        .from("likes")
         .delete()
-        .eq("Workout_id", WorkoutId)
+        .eq("workout_id", WorkoutId)
         .eq("profile_id", user.id);
       if (deleteError) {
         throw new Error(`Error removing like: ${deleteError.message}`);
