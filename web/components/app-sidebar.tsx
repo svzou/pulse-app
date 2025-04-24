@@ -1,12 +1,12 @@
 "use client";
-import { HeartPulse, User } from "lucide-react";
+import { BicepsFlexed, Dumbbell, HeartPulse, Library, User } from "lucide-react";
 
 import * as React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   BookOpen,
   Bot,
-  Frame,
+  House,
   GalleryVerticalEnd,
   Map,
   PieChart,
@@ -30,17 +30,17 @@ const data = {
     {
       name: "Home",
       url: "/",
-      icon: Frame,
+      icon: House,
     },
     {
       name: "Workout History",
       url: "workout-history",
-      icon: PieChart,
+      icon: BicepsFlexed,
     },
     {
       name: "Exercise Library",
       url: "exercise-library",
-      icon: Map,
+      icon: Dumbbell,
     },
     {
       name: "Profile",

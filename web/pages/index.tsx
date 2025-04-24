@@ -40,6 +40,8 @@ export default function Home({ user, profile }: HomeProps) {
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   const [loading, setLoading] = useState(false);
   const supabase = createClientComponentClient();
+  const [workoutCount, setWorkoutCount] = useState<number>(0);
+
 
   let avatarPublicUrl = '';
   if (profile.avatar_url) {
@@ -75,29 +77,40 @@ export default function Home({ user, profile }: HomeProps) {
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
   useEffect(() => {
     if (user?.id) {
-      const fetchRecentWorkouts = async () => {
-        const { data: recentWorkoutsData, error } = await supabase
+      const fetchWorkoutData = async () => {
+        // Fetch recent workouts
+        const { data: recentWorkoutsData, error: workoutsError } = await supabase
           .from("workouts")
           .select(`
-          *,
-          profiles:user_id (
-            id,
-            full_name,
-            avatar_url
-          )
-        `)
-
-          .order("created_at", { ascending: false })
-
-
-        if (!error && recentWorkoutsData) {
+            *,
+            profiles:user_id (
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
+          .order("created_at", { ascending: false });
+  
+        if (!workoutsError && recentWorkoutsData) {
           console.log("Workouts loaded:", recentWorkoutsData);
           setRecentWorkouts(recentWorkoutsData);
         }
+  
+        // Fetch workout count for the user
+        const { count, error: countError } = await supabase
+          .from("workouts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+  
+        if (!countError && typeof count === "number") {
+          setWorkoutCount(count);
+        }
       };
-      fetchRecentWorkouts();
+  
+      fetchWorkoutData();
     }
   }, [user?.id, supabase]);
+  
   
 
   const refresh = async () => {
@@ -188,7 +201,7 @@ export default function Home({ user, profile }: HomeProps) {
           avatarUrl={profile.avatar_url}
           
           stats={[
-            { label: 'Workouts', value: 0 },
+            { label: 'Workouts', value: workoutCount },
             { label: 'Followers', value: profile.Followers?.length || 0 },
             { label: 'Following', value: profile.Following?.length || 0 },
           ]}
