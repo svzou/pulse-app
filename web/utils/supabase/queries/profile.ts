@@ -26,7 +26,7 @@ export const getProfileData = async (
 ): Promise<UserProfile | null> => {
   try {
     const { data, error } = await supabase
-      .from("users")
+      .from("profiles")
       .select("*")
       .eq("id", profileId)
       .single();
@@ -56,7 +56,7 @@ export const getFollowing = async (
       .select(
         `
         following_id,
-        users!following_id(*)
+        profiles!following_id(*)
       `
       )
       .eq("follower_id", user.id);
@@ -67,7 +67,7 @@ export const getFollowing = async (
     }
 
     // Extract the user profiles from the joined data
-    return data.flatMap((item) => item.users) as UserProfile[];
+    return data.flatMap((item) => item.profiles) as UserProfile[];
   } catch (err) {
     console.error("Error in getFollowing:", err);
     return [];
@@ -152,7 +152,7 @@ export const updateProfile = async (
 ): Promise<UserProfile | null> => {
   try {
     const { data, error } = await supabase
-      .from("users")
+      .from("profiles")
       .update(updates)
       .eq("id", user.id)
       .select()
@@ -182,7 +182,7 @@ export const updateProfilePicture = async (
     if (!file) {
       // Remove the avatar
       const { error } = await supabase
-        .from("users")
+        .from("profiles")
         .update({ avatar_url: null })
         .eq("id", user.id);
 
@@ -205,7 +205,7 @@ export const updateProfilePicture = async (
 
     // Update the user's avatar_url
     const { error: updateError } = await supabase
-      .from("users")
+      .from("profiles")
       .update({ avatar_url: filePath })
       .eq("id", user.id);
 

@@ -24,98 +24,22 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useRouter } from "next/router";
-// This is sample data.
+
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-  ],
-  navMain: [
-    {
-      title: "Home",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Workouts",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Exercise Library",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-  ],
   projects: [
     {
       name: "Home",
-      url: "#",
+      url: "/",
       icon: Frame,
     },
     {
       name: "Workout History",
-      url: "#",
+      url: "workout-history",
       icon: PieChart,
     },
     {
       name: "Exercise Library",
-      url: "#",
+      url: "exercise-library",
       icon: Map,
     },
     {
@@ -125,6 +49,7 @@ const data = {
     },
   ],
 };
+
 
 export default function AppSidebar({
   ...props

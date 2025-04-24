@@ -14,6 +14,11 @@ import { Card } from '@/components/ui/card';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
 import Feed from './feed';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ProfilePage from './profile';
+import uploadAvatar from "./profile"
+
+
 
 enum HomePageTab {
   FOR_YOU = 'ForYou',
@@ -32,6 +37,15 @@ export default function Home({ user, profile }: HomeProps) {
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
   const [loading, setLoading] = useState(false);
   const supabase = createClientComponentClient();
+
+  let avatarPublicUrl = '';
+  if (profile.avatar_url) {
+    const { data } = supabase
+      .storage
+      .from('avatars')
+      .getPublicUrl(profile.avatar_url);
+    avatarPublicUrl = data.publicUrl;
+  }
 
   const fetchDataFn =
     activeTab === HomePageTab.FOR_YOU
@@ -61,7 +75,7 @@ export default function Home({ user, profile }: HomeProps) {
           .select("*")
 
           .order("created_at", { ascending: false })
-          .limit(5);
+
 
         if (!error && recentWorkoutsData) {
           console.log("Workouts loaded:", recentWorkoutsData);
@@ -111,6 +125,7 @@ export default function Home({ user, profile }: HomeProps) {
   return (
     <div className="w-full mx-auto max-w-[600px] h-full">
       <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full mt-16">
+        
         <div className="flex flex-row items-center gap-3 px-2">
           <TabsList className="grid grid-cols-3 w-full h-[48px] bg-gray-100 dark:bg-gray-800 rounded-xl p-1 shadow-sm">
             <TabsTrigger
@@ -166,7 +181,8 @@ export default function Home({ user, profile }: HomeProps) {
         <UserProfile
           name={profile.full_name || 'User'}
           handle={`@${profile.email.split('@')[0]}`}
-          avatarUrl="/images/default-avatar.png"
+          avatarUrl={profile.avatar_url}
+          
           stats={[
             { label: 'Workouts', value: 0 },
             { label: 'Followers', value: profile.Followers?.length || 0 },

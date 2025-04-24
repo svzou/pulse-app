@@ -72,8 +72,6 @@ export const getWorkout = async (
       duration_minutes: data.duration_minutes,
       visibility: data.visibility,
       attachment_url: data.attachment_url,
-     
-
     };
     return Workout.parse(WorkoutData);
   } catch (err) {
@@ -300,13 +298,10 @@ export const getLikesFeed = async (
       console.error("Error fetching likes:", likesError);
       return [];
     }
-     // If user hasn't liked any workouts, return empty array
-     if (!likedWorkoutIds || likedWorkoutIds.length === 0) {
+    // If user hasn't liked any workouts, return empty array
+    if (!likedWorkoutIds || likedWorkoutIds.length === 0) {
       return [];
-
     }
-
-
 
     // Extract the workout IDs
     const workoutIds = likedWorkoutIds.map((like) => like.workout_id);
@@ -333,7 +328,7 @@ export const getLikesFeed = async (
       workoutsData.map(async (workout) => {
         // Get the author for this workout
         const { data: authorData, error: authorError } = await supabase
-          .from("users")
+          .from("profiles")
           .select("*")
           .eq("id", workout.user_id)
           .single();

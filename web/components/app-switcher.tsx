@@ -16,7 +16,7 @@ import {
   SquareTerminal,
 } from "lucide-react"
 
-
+import NavUser from "./nav-user";
 import Link from "next/link";
 import NavProjects from "@/components/nav-projects"
 
@@ -144,7 +144,7 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        {/* <NavUser user={user} profile={profile} /> soph-UPDATE WITH USER FIELD IN HEADER*/}
+        {/* <NavUser user={data.user}  /> soph-UPDATE WITH USER FIELD IN HEADER */}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
