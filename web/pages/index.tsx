@@ -17,6 +17,8 @@ import Feed from './feed';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfilePage from './profile';
 import uploadAvatar from "./profile"
+import WorkoutCard from '@/components/workout-card';
+
 
 
 
@@ -30,6 +32,7 @@ interface HomeProps {
   user: any;
   profile: any;
 }
+
 
 export default function Home({ user, profile }: HomeProps) {
   const queryClient = useQueryClient();
@@ -65,6 +68,9 @@ export default function Home({ user, profile }: HomeProps) {
     initialPageParam: 0,
   });
 
+
+
+  
   // Fetch recent workouts and merge them into the feed
   const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
   useEffect(() => {
@@ -72,7 +78,14 @@ export default function Home({ user, profile }: HomeProps) {
       const fetchRecentWorkouts = async () => {
         const { data: recentWorkoutsData, error } = await supabase
           .from("workouts")
-          .select("*")
+          .select(`
+          *,
+          profiles:user_id (
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
 
           .order("created_at", { ascending: false })
 
@@ -85,6 +98,7 @@ export default function Home({ user, profile }: HomeProps) {
       fetchRecentWorkouts();
     }
   }, [user?.id, supabase]);
+  
 
   const refresh = async () => {
     setLoading(true);
@@ -94,25 +108,14 @@ export default function Home({ user, profile }: HomeProps) {
   };
 
   const renderWorkouts = (workouts: any[] | undefined, additionalWorkouts: any[] = []) => {
-    // Combine the fetched posts and recent workouts
     const allWorkouts = [...(additionalWorkouts || []), ...(workouts?.flat() || [])];
-    
+  
     return (
       <ScrollArea className="mt-4 h-[70vh] w-full border bg-card text-card-foreground shadow-2xl">
         <div className="space-y-4 p-4">
           {allWorkouts.length > 0 ? (
             allWorkouts.map((workout: any) => (
-              <Card key={workout.id} className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold">{workout.title}</h3>
-                    <p className="text-gray-600">{workout.description || 'No description'}</p>
-                    <p className="text-sm text-gray-500 mt-2">Duration: {workout.duration_minutes} minutes</p>
-                    <p className="text-sm text-gray-500">By: {workout.user_id || 'Unknown'}</p>
-                  </div>
-                  <span className="text-sm text-gray-500">{new Date(workout.created_at).toLocaleDateString()}</span>
-                </div>
-              </Card>
+              <WorkoutCard key={workout.id} workout={workout} user={user} />
             ))
           ) : (
             <p className="text-center text-gray-500">No workouts found.</p>
@@ -121,6 +124,7 @@ export default function Home({ user, profile }: HomeProps) {
       </ScrollArea>
     );
   };
+  
 
   return (
     <div className="w-full mx-auto max-w-[600px] h-full">
