@@ -87,8 +87,8 @@ export default function ExerciseLibrary() {
               <li key={ex.id}>
                 <button
                   onClick={() => setSelected(ex)}
-                  className={`w-full text-left px-3 py-2 border border-black rounded hover:bg-gray-100 transition ${
-                    selected?.id === ex.id ? "bg-gray-200 font-semibold" : ""
+                  className={`w-full text-left px-3 py-2 border border-black rounded hover:bg-sky-200 transition ${
+                    selected?.id === ex.id ? "bg-sky-200 font-semibold" : ""
                   }`}
                 >
                   {ex.name}{" "}
