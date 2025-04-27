@@ -113,7 +113,7 @@ export default function ProfilePage({
 
       // Get user profile
       const { data: profile, error: profileError } = await supabase
-        .from("users")
+        .from("profiles")
         .select("*")
         .eq("id", userId)
         .single();
@@ -218,7 +218,7 @@ export default function ProfilePage({
 
       // Update user profile with new avatar URL
       const { error: updateError } = await supabase
-        .from("users")
+        .from("profiles")
         .update({
           avatar_url: publicUrl,
           updated_at: new Date().toISOString(),
@@ -256,7 +256,7 @@ export default function ProfilePage({
       };
 
       const { error: updateError } = await supabase
-        .from("users")
+        .from("profiles")
         .update(updates)
         .eq("id", initialUser.id);
 

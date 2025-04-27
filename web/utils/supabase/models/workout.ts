@@ -47,6 +47,7 @@ export const Following = z.object({
 
 /**
  * Helper variables containing empty models
+
  */
 export const emptyWorkoutAuthor = WorkoutAuthor.parse({
   id: "",
@@ -74,7 +75,10 @@ export const emptyWorkout = Workout.parse({
   attachment_url: "",
 });
 
+
+
 export const emptyFollowing = Following.parse({
   follower_id: "",
   following_id: "",
 });
+

@@ -56,7 +56,7 @@ export const getFollowing = async (
       .select(
         `
         following_id,
-        users!following_id(*)
+        profiles!following_id(*)
       `
       )
       .eq("follower_id", user.id);
@@ -67,7 +67,7 @@ export const getFollowing = async (
     }
 
     // Extract the user profiles from the joined data
-    return data.flatMap((item) => item.users) as UserProfile[];
+    return data.flatMap((item) => item.profiles) as UserProfile[];
   } catch (err) {
     console.error("Error in getFollowing:", err);
     return [];

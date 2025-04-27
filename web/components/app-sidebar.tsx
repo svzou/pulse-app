@@ -1,12 +1,12 @@
 "use client";
-import { HeartPulse, User } from "lucide-react";
+import { BicepsFlexed, Dumbbell, HeartPulse, Library, User } from "lucide-react";
 
 import * as React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   BookOpen,
   Bot,
-  Frame,
+  House,
   GalleryVerticalEnd,
   Map,
   PieChart,
@@ -23,100 +23,24 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useRouter } from "next/router";
 
-// This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-  ],
-  navMain: [
-    {
-      title: "Home",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Workouts",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Exercise Library",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-  ],
   projects: [
     {
       name: "Home",
-      url: "#",
-      icon: Frame,
+      url: "/",
+      icon: House,
     },
     {
       name: "Workout History",
-      url: "#",
-      icon: PieChart,
+      url: "workout-history",
+      icon: BicepsFlexed,
     },
     {
       name: "Exercise Library",
-      url: "#",
-      icon: Map,
+      url: "exercise-library",
+      icon: Dumbbell,
     },
     {
       name: "Profile",
@@ -126,9 +50,15 @@ const data = {
   ],
 };
 
+
 export default function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
+  const hideSidebarRoutes = ['/login', '/signup'];
+  if (hideSidebarRoutes.includes(router.pathname)) {
+    return null;
+  }
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

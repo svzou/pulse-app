@@ -7,7 +7,9 @@ import CreateWorkoutPost from "@/components/ui/create-post";
 
 type FeedProps = {
   user: User;
-  workouts: InfiniteData<any[]> | undefined;
+
+  workouts: InfiniteData<WorkoutWithAuthor[], number> | undefined;
+
   fetchNextPage: () => void;
   showCreatePost?: boolean;
 };
@@ -15,7 +17,7 @@ type FeedProps = {
 export default function Feed({ user, workouts, fetchNextPage, showCreatePost = false }: FeedProps) {
   if (!user) {
     return (
-      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+      <div className="p-4 texthttps://github.com/comp426-25s/final-project-team-17/pull/19/conflict?name=web%252Futils%252Fsupabase%252Fqueries%252Fworkout.ts&ancestor_oid=cd2cde2159eb15885ac13444ee9a2e7018cc99f1&base_oid=631b52d778efe7955129fb264d92a937418eb939&head_oid=420f270c2d7c2934b4a620a24ba1c87648be07e1-center text-gray-500 dark:text-gray-400">
         Please sign in to view the feed.
       </div>
     );

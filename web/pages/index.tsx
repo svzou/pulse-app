@@ -12,20 +12,40 @@ import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/querie
 import Feed from "@/pages/feed";
 import CreatePost from '@/components/ui/create-post';
 import { getProfileData } from '@/utils/supabase/queries/profile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ProfilePage from './profile';
+import uploadAvatar from "./profile"
+import WorkoutCard from '@/components/workout-card';
 
 enum HomePageTab {
-  FOR_YOU = "ForYou",
-  FOLLOWING = "Following",
-  LIKED = "Liked",
+  FOR_YOU = 'ForYou',
+  FOLLOWING = 'Following',
+  LIKED = 'Liked',
 }
 
-export default function Home({ user, profile }) {
+interface HomeProps {
+  user: any;
+  profile: any;
+}
+
+export default function Home({ user, profile }: HomeProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(HomePageTab.FOR_YOU);
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const supabase = createClientComponentClient();
+  const [workoutCount, setWorkoutCount] = useState<number>(0);
+  const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
+
+  let avatarPublicUrl = '';
+  if (profile.avatar_url) {
+    const { data } = supabase
+      .storage
+      .from('avatars')
+      .getPublicUrl(profile.avatar_url);
+    avatarPublicUrl = data.publicUrl;
+  }
 
   // Redirect to login page if user is not authenticated
   useEffect(() => {
@@ -46,17 +66,51 @@ export default function Home({ user, profile }) {
   const { data: workouts, fetchNextPage, isLoading } = useInfiniteQuery({
     queryKey: ['feed', activeTab, user?.id], // Include the active tab in the query key
     queryFn: async ({ pageParam = 0 }) => {
-      // Fetch workouts using the appropriate function
       return await fetchDataFn(supabase, user, pageParam);
     },
     getNextPageParam: (lastPage, allPages) => {
-      // Determine the next page to fetch
-      // If the last page has fewer than 25 workouts, there are no more pages
       return lastPage.length < 25 ? undefined : allPages.length * 25;
     },
     initialPageParam: 0, // Start fetching from the first page
     enabled: !!user?.id, // Only run query if user is authenticated
   });
+
+  // Fetch recent workouts and merge them into the feed
+  useEffect(() => {
+    if (user?.id) {
+      const fetchWorkoutData = async () => {
+        // Fetch recent workouts
+        const { data: recentWorkoutsData, error: workoutsError } = await supabase
+          .from("workouts")
+          .select(`
+            *,
+            profiles:user_id (
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
+          .order("created_at", { ascending: false });
+  
+        if (!workoutsError && recentWorkoutsData) {
+          console.log("Workouts loaded:", recentWorkoutsData);
+          setRecentWorkouts(recentWorkoutsData);
+        }
+  
+        // Fetch workout count for the user
+        const { count, error: countError } = await supabase
+          .from("workouts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+  
+        if (!countError && typeof count === "number") {
+          setWorkoutCount(count);
+        }
+      };
+  
+      fetchWorkoutData();
+    }
+  }, [user?.id, supabase]);
 
   const refresh = async () => {
     setLoading(true);
@@ -68,6 +122,22 @@ export default function Home({ user, profile }) {
     setShowCreateForm(!showCreateForm);
   };
 
+  const renderWorkouts = (workouts: any[] | undefined, additionalWorkouts: any[] = []) => {
+    const allWorkouts = [...(additionalWorkouts || []), ...(workouts?.flat() || [])];
+  
+    return (
+      <div className="space-y-4 p-4">
+        {allWorkouts.length > 0 ? (
+          allWorkouts.map((workout: any) => (
+            <WorkoutCard key={workout.id} workout={workout} user={user} />
+          ))
+        ) : (
+          <p className="text-center text-gray-500">No workouts found.</p>
+        )}
+      </div>
+    );
+  };
+
   // If user is not logged in, don't render anything while redirecting
   if (!user) {
     return null;
@@ -75,112 +145,113 @@ export default function Home({ user, profile }) {
 
   return (
     <div className="flex flex-col w-full mx-auto max-w-[600px] min-h-screen pt-6 pb-20 border-none">
-    {/* Profile Card */}
-    <div className="mx-4 mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all hover:shadow-lg border-none">
-      <UserProfile
-        name={profile?.full_name || 'User'}
-        handle={`@${profile?.email?.split('@')[0] || 'user'}`}
-        avatarUrl="/images/default-avatar.png"
-        stats={[
-          { label: 'Workouts', value: 0 },
-          { label: 'Followers', value: profile?.Followers?.length || 0 },
-          { label: 'Following', value: profile?.Following?.length || 0 },
-        ]}
-      />
-    </div>
-    
-    {/* Create Post Button */}
-    <div className="mx-4 mb-6">
-      {!showCreateForm ? (
-        <Button 
-          onClick={toggleCreateForm}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-        >
-          <Plus size={18} />
-          Share Your Workout
-        </Button>
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 transition-all border-none">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg">Create New Post</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleCreateForm}
-              className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <X size={18} />
-            </Button>
+      {/* Profile Card */}
+      <div className="mx-4 mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all hover:shadow-lg border-none">
+        <UserProfile
+          name={profile?.full_name || 'User'}
+          handle={`@${profile?.email?.split('@')[0] || 'user'}`}
+          avatarUrl={profile.avatar_url || "/images/default-avatar.png"}
+          stats={[
+            { label: 'Workouts', value: workoutCount },
+            { label: 'Followers', value: profile?.Followers?.length || 0 },
+            { label: 'Following', value: profile?.Following?.length || 0 },
+          ]}
+        />
+      </div>
+      
+      {/* Create Post Button */}
+      <div className="mx-4 mb-6">
+        {!showCreateForm ? (
+          <Button 
+            onClick={toggleCreateForm}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Plus size={18} />
+            Share Your Workout
+          </Button>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 transition-all border-none">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Create New Post</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleCreateForm}
+                className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X size={18} />
+              </Button>
+            </div>
+            <CreatePost user={user} />
           </div>
-          <CreatePost user={user} />
+        )}
+      </div>
+      
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full">
+        <div className="flex flex-row items-center gap-3 mx-4 mb-4">
+          <TabsList className="grid grid-cols-3 w-full h-[52px] bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 shadow-sm border-none">
+            <TabsTrigger
+              value={HomePageTab.FOR_YOU}
+              className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              For You
+            </TabsTrigger>
+            <TabsTrigger
+              value={HomePageTab.FOLLOWING}
+              className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              Following
+            </TabsTrigger>
+            <TabsTrigger
+              value={HomePageTab.LIKED}
+              className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              Liked
+            </TabsTrigger>
+          </TabsList>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={refresh}
+            className="rounded-full w-12 h-12 flex items-center justify-center bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors shadow-sm"
+            disabled={loading}
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-t-2 border-b-2 border-gray-600 dark:border-gray-300 rounded-full animate-spin"></div>
+            ) : (
+              <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            )}
+          </Button>
         </div>
-      )}
-    </div>
-    
-    {/* Tabs Navigation */}
-    <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full">
-      <div className="flex flex-row items-center gap-3 mx-4 mb-4">
-        <TabsList className="grid grid-cols-3 w-full h-[52px] bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 shadow-sm border-none">
-          <TabsTrigger
-            value={HomePageTab.FOR_YOU}
-            className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
-          >
-            For You
-          </TabsTrigger>
-          <TabsTrigger
-            value={HomePageTab.FOLLOWING}
-            className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
-          >
-            Following
-          </TabsTrigger>
-          <TabsTrigger
-            value={HomePageTab.LIKED}
-            className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
-          >
-            Liked
-          </TabsTrigger>
-        </TabsList>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={refresh}
-          className="rounded-full w-12 h-12 flex items-center justify-center bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors shadow-sm"
-          disabled={loading}
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-t-2 border-b-2 border-gray-600 dark:border-gray-300 rounded-full animate-spin"></div>
-          ) : (
-            <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          )}
-        </Button>
-      </div>
 
-      {/* Feed Content - Removed overflow-y-auto */}
-      <div className="mt-2 bg-gray-50 dark:bg-gray-900 rounded-xl mx-4 p-2 border-none outline-none">
-        <TabsContent value={HomePageTab.FOR_YOU}>
-          <Feed 
-            user={user} 
-            workouts={workouts} 
-            fetchNextPage={fetchNextPage} 
-          />
-        </TabsContent>
-        <TabsContent value={HomePageTab.FOLLOWING}>
-          <Feed 
-            user={user} 
-            workouts={workouts} 
-            fetchNextPage={fetchNextPage} 
-          />
-        </TabsContent>
-        <TabsContent value={HomePageTab.LIKED}>
-          <Feed 
-            user={user} 
-            workouts={workouts} 
-            fetchNextPage={fetchNextPage} 
-          />
-        </TabsContent>
-      </div>
-    </Tabs>
-  </div>
+        {/* Feed Content */}
+        <div className="mt-2 bg-gray-50 dark:bg-gray-900 rounded-xl mx-4 p-2 border-none outline-none">
+          <TabsContent value={HomePageTab.FOR_YOU}>
+            <Feed 
+              user={user} 
+              workouts={workouts} 
+              fetchNextPage={fetchNextPage} 
+              additionalWorkouts={recentWorkouts}
+            />
+          </TabsContent>
+          <TabsContent value={HomePageTab.FOLLOWING}>
+            <Feed 
+              user={user} 
+              workouts={workouts} 
+              fetchNextPage={fetchNextPage} 
+            />
+          </TabsContent>
+          <TabsContent value={HomePageTab.LIKED}>
+            <Feed 
+              user={user} 
+              workouts={workouts} 
+              fetchNextPage={fetchNextPage} 
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
+    </div>
   );
 }
 
@@ -190,9 +261,9 @@ export async function getServerSideProps(context) {
 
   if (userError || !userData) {
     return {
-      props: {
-        user: null,
-        profile: null,
+      redirect: {
+        destination: '/login',
+        permanent: false,
       },
     };
   }
