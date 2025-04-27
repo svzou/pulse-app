@@ -1,26 +1,21 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState, useEffect } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Plus, X } from 'lucide-react';
 import UserProfile from '@/components/ui/profile-card';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { GetServerSidePropsContext } from 'next';
-import { useRouter } from 'next/router';
 import { createSupabaseServerClient } from '@/utils/supabase/clients/server-props';
-import { getProfileData } from '@/utils/supabase/queries/profile';
-import { Card } from '@/components/ui/card';
+import { useRouter } from 'next/router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
-import Feed from './feed';
+import Feed from "@/pages/feed";
+import CreatePost from '@/components/ui/create-post';
+import { getProfileData } from '@/utils/supabase/queries/profile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfilePage from './profile';
 import uploadAvatar from "./profile"
 import WorkoutCard from '@/components/workout-card';
-
-
-
 
 enum HomePageTab {
   FOR_YOU = 'ForYou',
@@ -33,15 +28,15 @@ interface HomeProps {
   profile: any;
 }
 
-
 export default function Home({ user, profile }: HomeProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>(HomePageTab.FOR_YOU);
+  const [activeTab, setActiveTab] = useState(HomePageTab.FOR_YOU);
   const [loading, setLoading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const supabase = createClientComponentClient();
   const [workoutCount, setWorkoutCount] = useState<number>(0);
-
+  const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
 
   let avatarPublicUrl = '';
   if (profile.avatar_url) {
@@ -52,6 +47,14 @@ export default function Home({ user, profile }: HomeProps) {
     avatarPublicUrl = data.publicUrl;
   }
 
+  // Redirect to login page if user is not authenticated
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
+
+  // Determine which data fetching function should be used
   const fetchDataFn =
     activeTab === HomePageTab.FOR_YOU
       ? getFeed
@@ -59,22 +62,20 @@ export default function Home({ user, profile }: HomeProps) {
       ? getFollowingFeed
       : getLikesFeed;
 
-  const { data: posts, fetchNextPage } = useInfiniteQuery({
-    queryKey: ['feed', activeTab, user?.id],
+  // Infinite query to fetch the workouts from the server
+  const { data: workouts, fetchNextPage, isLoading } = useInfiniteQuery({
+    queryKey: ['feed', activeTab, user?.id], // Include the active tab in the query key
     queryFn: async ({ pageParam = 0 }) => {
       return await fetchDataFn(supabase, user, pageParam);
     },
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.length < 25 ? undefined : allPages.length * 25;
     },
-    initialPageParam: 0,
+    initialPageParam: 0, // Start fetching from the first page
+    enabled: !!user?.id, // Only run query if user is authenticated
   });
 
-
-
-  
   // Fetch recent workouts and merge them into the feed
-  const [recentWorkouts, setRecentWorkouts] = useState<any[]>([]);
   useEffect(() => {
     if (user?.id) {
       const fetchWorkoutData = async () => {
@@ -110,55 +111,100 @@ export default function Home({ user, profile }: HomeProps) {
       fetchWorkoutData();
     }
   }, [user?.id, supabase]);
-  
-  
 
   const refresh = async () => {
     setLoading(true);
     await queryClient.invalidateQueries({ queryKey: ['feed', activeTab, user?.id] });
-    router.replace(router.asPath);
     setLoading(false);
+  };
+
+  const toggleCreateForm = () => {
+    setShowCreateForm(!showCreateForm);
   };
 
   const renderWorkouts = (workouts: any[] | undefined, additionalWorkouts: any[] = []) => {
     const allWorkouts = [...(additionalWorkouts || []), ...(workouts?.flat() || [])];
   
     return (
-      <ScrollArea className="mt-4 h-[70vh] w-full border bg-card text-card-foreground shadow-2xl">
-        <div className="space-y-4 p-4">
-          {allWorkouts.length > 0 ? (
-            allWorkouts.map((workout: any) => (
-              <WorkoutCard key={workout.id} workout={workout} user={user} />
-            ))
-          ) : (
-            <p className="text-center text-gray-500">No workouts found.</p>
-          )}
-        </div>
-      </ScrollArea>
+      <div className="space-y-4 p-4">
+        {allWorkouts.length > 0 ? (
+          allWorkouts.map((workout: any) => (
+            <WorkoutCard key={workout.id} workout={workout} user={user} />
+          ))
+        ) : (
+          <p className="text-center text-gray-500">No workouts found.</p>
+        )}
+      </div>
     );
   };
-  
+
+  // If user is not logged in, don't render anything while redirecting
+  if (!user) {
+    return null;
+  }
 
   return (
-    <div className="w-full mx-auto max-w-[600px] h-full">
-      <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full mt-16">
-        
-        <div className="flex flex-row items-center gap-3 px-2">
-          <TabsList className="grid grid-cols-3 w-full h-[48px] bg-gray-100 dark:bg-gray-800 rounded-xl p-1 shadow-sm">
+    <div className="flex flex-col w-full mx-auto max-w-[600px] min-h-screen pt-6 pb-20 border-none">
+      {/* Profile Card */}
+      <div className="mx-4 mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all hover:shadow-lg border-none">
+        <UserProfile
+          name={profile?.full_name || 'User'}
+          handle={`@${profile?.email?.split('@')[0] || 'user'}`}
+          avatarUrl={profile.avatar_url || "/images/default-avatar.png"}
+          stats={[
+            { label: 'Workouts', value: workoutCount },
+            { label: 'Followers', value: profile?.Followers?.length || 0 },
+            { label: 'Following', value: profile?.Following?.length || 0 },
+          ]}
+        />
+      </div>
+      
+      {/* Create Post Button */}
+      <div className="mx-4 mb-6">
+        {!showCreateForm ? (
+          <Button 
+            onClick={toggleCreateForm}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Plus size={18} />
+            Share Your Workout
+          </Button>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 transition-all border-none">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Create New Post</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleCreateForm}
+                className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X size={18} />
+              </Button>
+            </div>
+            <CreatePost user={user} />
+          </div>
+        )}
+      </div>
+      
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full">
+        <div className="flex flex-row items-center gap-3 mx-4 mb-4">
+          <TabsList className="grid grid-cols-3 w-full h-[52px] bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 shadow-sm border-none">
             <TabsTrigger
-              value="ForYou"
+              value={HomePageTab.FOR_YOU}
               className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               For You
             </TabsTrigger>
             <TabsTrigger
-              value="Following"
+              value={HomePageTab.FOLLOWING}
               className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               Following
             </TabsTrigger>
             <TabsTrigger
-              value="Liked"
+              value={HomePageTab.LIKED}
               className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               Liked
@@ -168,7 +214,7 @@ export default function Home({ user, profile }: HomeProps) {
             variant="secondary"
             size="sm"
             onClick={refresh}
-            className="rounded-full w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="rounded-full w-12 h-12 flex items-center justify-center bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors shadow-sm"
             disabled={loading}
           >
             {loading ? (
@@ -179,50 +225,37 @@ export default function Home({ user, profile }: HomeProps) {
           </Button>
         </div>
 
-        <TabsContent value="ForYou">
-          {user ? renderWorkouts(posts?.pages, recentWorkouts) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the For You feed.</div>}
-        </TabsContent>
-        <TabsContent value="Following">
-          {user ? renderWorkouts(posts?.pages) : <div className="p-4 text-center text-gray-500 dark:text-gray-400">Please sign in to view the Following feed.</div>}
-        </TabsContent>
-        <TabsContent value="Liked">
-        {user ? (
-             <Feed user={user} workouts={posts} fetchNextPage={fetchNextPage} />) : (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-              Please sign in to view the Liked feed.
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-      {user && profile ? (
-        <UserProfile
-          name={profile.full_name || 'User'}
-          handle={`@${profile.email.split('@')[0]}`}
-          avatarUrl={profile.avatar_url}
-          
-          stats={[
-            { label: 'Workouts', value: workoutCount },
-            { label: 'Followers', value: profile.Followers?.length || 0 },
-            { label: 'Following', value: profile.Following?.length || 0 },
-          ]}
-        />
-      ) : (
-        <div className="mt-10 text-center">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Welcome!</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Please sign in to see your feed.</p>
-          <Button
-            onClick={() => router.push('/login')}
-            className="mt-4 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
-          >
-            Sign In
-          </Button>
+        {/* Feed Content */}
+        <div className="mt-2 bg-gray-50 dark:bg-gray-900 rounded-xl mx-4 p-2 border-none outline-none">
+          <TabsContent value={HomePageTab.FOR_YOU}>
+            <Feed 
+              user={user} 
+              workouts={workouts} 
+              fetchNextPage={fetchNextPage} 
+              additionalWorkouts={recentWorkouts}
+            />
+          </TabsContent>
+          <TabsContent value={HomePageTab.FOLLOWING}>
+            <Feed 
+              user={user} 
+              workouts={workouts} 
+              fetchNextPage={fetchNextPage} 
+            />
+          </TabsContent>
+          <TabsContent value={HomePageTab.LIKED}>
+            <Feed 
+              user={user} 
+              workouts={workouts} 
+              fetchNextPage={fetchNextPage} 
+            />
+          </TabsContent>
         </div>
-      )}
+      </Tabs>
     </div>
   );
 }
 
-export async function getServerSideProps(context: GetServerSidePropsContext) {
+export async function getServerSideProps(context) {
   const supabase = createSupabaseServerClient(context);
   const { data: userData, error: userError } = await supabase.auth.getUser();
 

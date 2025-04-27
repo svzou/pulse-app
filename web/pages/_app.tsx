@@ -24,7 +24,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
         </ SidebarProvider>
         {/* The header is then shown above all components. */}
-        <div className="flex h-screen flex-col px-4 overflow-hidden">
+        <div className="flex h-screen flex-col px-4 w-full h-screen overflow-y-auto">
           <Header />
           <Component {...pageProps} />
         </div>
