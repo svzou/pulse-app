@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { User } from '@supabase/supabase-js';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -12,33 +11,28 @@ import {
   Eye, 
   Dumbbell,
   Calendar, 
-  User as UserIcon,
   Loader2
 } from 'lucide-react';
 import { getWorkoutExercises } from '@/utils/supabase/queries/workout';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'; 
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { isLikedByUser, getLikesCount, toggleLike } from '@/queries/like';
 
 // Types
 type WorkoutCardProps = {
   workout: any;
   user: User;
-  onLike?: (id: string) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
-  isLiked?: boolean;
-  likesCount?: number;
 };
 
 export default function WorkoutCard({ 
   workout, 
   user, 
-  onLike, 
-  onDelete,
-  isLiked: initialIsLiked,
-  likesCount: initialLikesCount
+  onDelete
 }: WorkoutCardProps) {
-  const [liked, setLiked] = useState(initialIsLiked || false);
-  const [likesCount, setLikesCount] = useState(initialLikesCount || 0);
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [exercises, setExercises] = useState<any[]>([]);
@@ -57,49 +51,26 @@ export default function WorkoutCard({
   };
   
   useEffect(() => {
-    // If likes are not provided externally, check if user liked this workout
-    if (initialIsLiked === undefined) {
-      const checkLiked = async () => {
+    // Check if user liked this workout and get likes count
+    const fetchLikeData = async () => {
+      if (user && workout.id) {
         try {
-          const { data, error } = await supabase
-            .from("likes")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("workout_id", workout.id)
-            .maybeSingle();
-            
-          if (!error) {
-            setLiked(!!data);
-          }
+          // Check if the user has liked this workout
+          const isLiked = await isLikedByUser(user.id, workout.id);
+          setLiked(isLiked);
+          
+          // Get the likes count
+          const count = await getLikesCount(workout.id);
+          setLikesCount(count);
         } catch (err) {
-          console.error("Error checking like status:", err);
+          console.error("Error fetching like data:", err);
         }
-      };
-      
-      checkLiked();
-    }
+      }
+    };
     
-    // If likes count is not provided externally, fetch it
-    if (initialLikesCount === undefined) {
-      const getLikesCount = async () => {
-        try {
-          const { count, error } = await supabase
-            .from("likes")
-            .select("id", { count: "exact" })
-            .eq("workout_id", workout.id);
-            
-          if (!error && count !== null) {
-            setLikesCount(count);
-          }
-        } catch (err) {
-          console.error("Error counting likes:", err);
-        }
-      };
-      
-      getLikesCount();
-    }
+    fetchLikeData();
     
-    // Fetch exercises for this workout if not already included
+    // Fetch exercises for this workout
     const fetchExercises = async () => {
       setFetchingExercises(true);
       
@@ -110,18 +81,7 @@ export default function WorkoutCard({
         console.log("Exercise data received:", exerciseData);
         
         if (exerciseData && exerciseData.length > 0) {
-          // Process the exercise data to get the actual exercise objects
-          const processedExercises = exerciseData.map(item => {
-            // If the item has an exercises property (from a join), use that
-            if (item.exercises) {
-              return item.exercises;
-            }
-            // Otherwise return the item itself
-            return item;
-          });
-          
-          console.log("Processed exercises:", processedExercises);
-          setExercises(processedExercises);
+          setExercises(exerciseData);
         } else {
           console.log("No exercises found for this workout");
           setExercises([]);
@@ -135,43 +95,22 @@ export default function WorkoutCard({
     };
     
     fetchExercises();
-  }, [
-    workout.id, 
-    user?.id, 
-    supabase, 
-    initialIsLiked, 
-    initialLikesCount
-  ]);
+  }, [workout.id, user?.id, supabase]);
   
   const handleLike = async () => {
-    if (loading) return;
+    if (loading || !user || !workout.id) return;
     setLoading(true);
     
     try {
-      if (onLike) {
-        // Use the provided like handler if available
-        await onLike(workout.id);
-      } else {
-        // Otherwise perform the like operation directly
-        // Fix table name to match your database schema - "likes" (plural)
-        const { error } = await supabase
-          .from("likes")
-          .upsert({
-            user_id: user.id,
-            workout_id: workout.id,
-            created_at: new Date().toISOString()
-          }, { onConflict: 'user_id,workout_id' });
-        
-        if (error) {
-          console.error("Error toggling like:", error);
-          throw error;
-        }
-      }
+      console.log("Toggling like for workout", workout.id);
       
-      // Update local state
-      const newLiked = !liked;
-      setLiked(newLiked);
-      setLikesCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
+      // Toggle the like in the database
+      const newLikeStatus = await toggleLike(user.id, workout.id);
+      console.log("New like status:", newLikeStatus);
+      
+      // Update local state based on the result
+      setLiked(newLikeStatus);
+      setLikesCount(prev => newLikeStatus ? prev + 1 : Math.max(0, prev - 1));
     } catch (err) {
       console.error('Error toggling like:', err);
     } finally {
