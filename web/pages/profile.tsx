@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-// import { User, Workout, UserStats } from '@/types/database'
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart, PlusCircle, Image as ImageIcon, Edit } from "lucide-react";
+import { BarChart, PlusCircle, Image as ImageIcon, Edit, Users } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/router";
 import { Session, User as AuthUser } from "@supabase/supabase-js";
 import { UserProfile as User } from "@/utils/supabase/queries/profile";
+import Link from "next/link";
 
 import { type GetServerSidePropsContext } from "next";
 import { createServerClient, serializeCookieHeader } from "@supabase/ssr";
@@ -86,6 +86,12 @@ export default function ProfilePage({
   const [loading, setLoading] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [following, setFollowing] = useState<any[]>([]);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
 
   useEffect(() => {
     if (initialUser) {
@@ -178,10 +184,98 @@ export default function ProfilePage({
         console.log("Photos loaded:", workoutPhotos);
         setPhotos(workoutPhotos.map((w) => w.attachment_url!));
       }
+
+      // Get followers count
+      const { count: followersCount, error: followersCountError } = await supabase
+        .from("following")
+        .select("*", { count: "exact", head: true })
+        .eq("following_id", userId);
+
+      if (followersCountError) {
+        console.error("Followers count error:", followersCountError);
+      } else {
+        setFollowersCount(followersCount || 0);
+      }
+
+      // Get following count
+      const { count: followingCount, error: followingCountError } = await supabase
+        .from("following")
+        .select("*", { count: "exact", head: true })
+        .eq("follower_id", userId);
+
+      if (followingCountError) {
+        console.error("Following count error:", followingCountError);
+      } else {
+        setFollowingCount(followingCount || 0);
+      }
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFollowers = async () => {
+    if (!initialUser?.id) return;
+    
+    try {
+      // Get followers (people who follow this user)
+      const { data, error } = await supabase
+        .from("following")
+        .select(`
+          follower_id,
+          profiles:follower_id (
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq("following_id", initialUser.id);
+
+      if (error) {
+        console.error("Error fetching followers:", error);
+        return;
+      }
+
+      if (data) {
+        setFollowers(data.map(item => item.profiles));
+        setShowFollowers(true);
+        setShowFollowing(false);
+      }
+    } catch (error) {
+      console.error("Error in fetchFollowers:", error);
+    }
+  };
+
+  const fetchFollowing = async () => {
+    if (!initialUser?.id) return;
+    
+    try {
+      // Get following (people this user follows)
+      const { data, error } = await supabase
+        .from("following")
+        .select(`
+          following_id,
+          profiles:following_id (
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq("follower_id", initialUser.id);
+
+      if (error) {
+        console.error("Error fetching following:", error);
+        return;
+      }
+
+      if (data) {
+        setFollowing(data.map(item => item.profiles));
+        setShowFollowing(true);
+        setShowFollowers(false);
+      }
+    } catch (error) {
+      console.error("Error in fetchFollowing:", error);
     }
   };
 
@@ -341,8 +435,77 @@ export default function ProfilePage({
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Profile
               </Button>
+              
+              {/* Followers/Following Stats */}
+              <div className="flex justify-between w-full mt-6">
+                <button 
+                  onClick={fetchFollowers}
+                  className="text-center focus:outline-none"
+                >
+                  <div className="font-bold">{followersCount}</div>
+                  <div className="text-gray-600 text-sm">Followers</div>
+                </button>
+                <button 
+                  onClick={fetchFollowing}
+                  className="text-center focus:outline-none"
+                >
+                  <div className="font-bold">{followingCount}</div>
+                  <div className="text-gray-600 text-sm">Following</div>
+                </button>
+              </div>
             </div>
           </Card>
+          
+          {/* Followers/Following Modal */}
+          {(showFollowers || showFollowing) && (
+            <Card className="p-4 mt-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold flex items-center">
+                  <Users className="w-4 h-4 mr-2" />
+                  {showFollowers ? "Followers" : "Following"}
+                </h3>
+                <button 
+                  onClick={() => {
+                    setShowFollowers(false);
+                    setShowFollowing(false);
+                  }}
+                  className="text-gray-500 text-sm"
+                >
+                  Close
+                </button>
+              </div>
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-3">
+                  {(showFollowers ? followers : following).map((profile) => (
+                    <Link 
+                      href={`/profile/${profile.id}`} 
+                      key={profile.id}
+                      className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                    >
+                      <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
+                        <img
+                          src={profile.avatar_url || "/default-avatar.png"}
+                          alt={profile.full_name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium">{profile.full_name}</p>
+                        <p className="text-gray-600 text-sm">@{profile.id}</p>
+                      </div>
+                    </Link>
+                  ))}
+                  {(showFollowers ? followers : following).length === 0 && (
+                    <p className="text-center text-gray-500 py-4">
+                      {showFollowers 
+                        ? "No followers yet" 
+                        : "Not following anyone yet"}
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </Card>
+          )}
         </div>
 
         {/* Middle Column - Stats and Workouts */}
