@@ -10,12 +10,10 @@ import { useRouter } from 'next/router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getFeed, getFollowingFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
 import Feed from "@/pages/feed";
-import CreatePost from '@/components/ui/create-post';
+import CreateWorkout from '@/components/ui/create-workout';
 import { getProfileData } from '@/utils/supabase/queries/profile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import ProfilePage from './profile';
-import uploadAvatar from "./profile"
-import WorkoutCard from '@/components/workout-card';
+import WorkoutCard from '@/components/ui/workoutcard';
 
 enum HomePageTab {
   FOR_YOU = 'ForYou',
@@ -93,7 +91,6 @@ export default function Home({ user, profile }: HomeProps) {
           .order("created_at", { ascending: false });
   
         if (!workoutsError && recentWorkoutsData) {
-          console.log("Workouts loaded:", recentWorkoutsData);
           setRecentWorkouts(recentWorkoutsData);
         }
   
@@ -122,22 +119,6 @@ export default function Home({ user, profile }: HomeProps) {
     setShowCreateForm(!showCreateForm);
   };
 
-  const renderWorkouts = (workouts: any[] | undefined, additionalWorkouts: any[] = []) => {
-    const allWorkouts = [...(additionalWorkouts || []), ...(workouts?.flat() || [])];
-  
-    return (
-      <div className="space-y-4 p-4">
-        {allWorkouts.length > 0 ? (
-          allWorkouts.map((workout: any) => (
-            <WorkoutCard key={workout.id} workout={workout} user={user} />
-          ))
-        ) : (
-          <p className="text-center text-gray-500">No workouts found.</p>
-        )}
-      </div>
-    );
-  };
-
   // If user is not logged in, don't render anything while redirecting
   if (!user) {
     return null;
@@ -147,19 +128,19 @@ export default function Home({ user, profile }: HomeProps) {
     <div className="flex flex-col w-full mx-auto max-w-[600px] min-h-screen pt-6 pb-20 border-none">
       {/* Profile Card */}
       <div className="mx-4 mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all hover:shadow-lg border-none">
-        <UserProfile
-          name={profile?.full_name || 'User'}
-          handle={`@${profile?.email?.split('@')[0] || 'user'}`}
-          avatarUrl={profile.avatar_url || "/images/default-avatar.png"}
-          stats={[
-            { label: 'Workouts', value: workoutCount },
-            { label: 'Followers', value: profile?.Followers?.length || 0 },
-            { label: 'Following', value: profile?.Following?.length || 0 },
-          ]}
-        />
-      </div>
+      <UserProfile
+        name={profile?.full_name || 'User'}
+        handle={`@${profile?.email?.split('@')[0] || 'user'}`}
+        avatarUrl={profile.avatar_url || "/images/default-avatar.png"}
+        stats={[
+          { label: 'Workouts', value: workoutCount },
+          { label: 'Followers', value: profile?.Followers?.length || 0 },
+          { label: 'Following', value: profile?.Following?.length || 0 },
+        ]}
+      />
+    </div>
       
-      {/* Create Post Button */}
+      {/* Create Post Button or Form */}
       <div className="mx-4 mb-6">
         {!showCreateForm ? (
           <Button 
@@ -170,9 +151,9 @@ export default function Home({ user, profile }: HomeProps) {
             Share Your Workout
           </Button>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 transition-all border-none">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 transition-all border-none relative">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Create New Post</h3>
+              <h3 className="font-bold text-lg">Create New Workout</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -182,7 +163,7 @@ export default function Home({ user, profile }: HomeProps) {
                 <X size={18} />
               </Button>
             </div>
-            <CreatePost user={user} />
+            <CreateWorkout user={user} />
           </div>
         )}
       </div>

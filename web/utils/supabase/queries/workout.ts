@@ -65,7 +65,7 @@ export const getWorkout = async (
 };
 
 /**
- * Loads data for the user's workout feed
+ * Loads data for the user's workout feed with improved error handling and sorting
  * Returns recent workouts in reverse chronological order
  * 
  * @param supabase Supabase client
@@ -74,49 +74,87 @@ export const getWorkout = async (
  * @returns Array of workout objects
  */
 export const getFeed = async (
-  supabase: SupabaseClient,
-  user: User,
-  cursor: number
-): Promise<z.infer<typeof Workout>[]> => {
+  supabase,
+  user,
+  cursor = 0
+) => {
   try {
+    console.log(`Fetching feed for user ${user.id}, starting at cursor ${cursor}`);
+    
+    // Query workouts with proper ordering and limit
     const { data, error } = await supabase
       .from("workouts")
-      .select(
-        `
-        *,
-        author:author_id (id, name, handle, avatar_url),
-        likes:like (profile_id)
-      `
-      )
-      .order("created_at", { ascending: false })
+      .select(`
+        id,
+        user_id,
+        title,
+        description,
+        created_at,
+        duration_minutes, 
+        visibility,
+        attachment_url,
+        profiles:user_id (
+          id,
+          full_name,
+          email,
+          avatar_url
+        )
+      `)
+      .order("created_at", { ascending: false }) // Most recent first
       .range(cursor, cursor + 24);
       
     if (error) {
-      throw new Error(`Failed to fetch feed workouts: ${error.message}`);
+      console.error("Error fetching feed:", error);
+      throw new Error(`Failed to fetch feed: ${error.message}`);
     }
     
     if (!data || data.length === 0) {
+      console.log("No workouts found in feed");
       return [];
     }
     
-    console.log("Fetched data:", data);
+    console.log(`Fetched ${data.length} workouts for feed`);
     
-    try {
-      const workouts = Workout.array().parse(data);
-      return workouts;
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new Error(`Failed to parse workouts: ${err.message}`);
-      } else {
-        throw new Error(`Failed to parse workouts: Unknown error`);
-      }
-    }
+    // For each workout, check if there are any exercises
+    const workoutsWithExerciseCounts = await Promise.all(
+      data.map(async (workout) => {
+        try {
+          // Count the exercises for this workout
+          const { count, error: countError } = await supabase
+            .from("workout_exercises")
+            .select("*", { count: "exact", head: true })
+            .eq("workout_id", workout.id);
+            
+          if (countError) {
+            console.warn(`Error counting exercises for workout ${workout.id}:`, countError);
+            return {
+              ...workout,
+              exercise_count: 0
+            };
+          }
+          
+          return {
+            ...workout,
+            exercise_count: count || 0
+          };
+        } catch (err) {
+          console.error(`Error processing workout ${workout.id}:`, err);
+          return workout;
+        }
+      })
+    );
+    
+    // Double-check that the workouts are actually sorted by created_at (most recent first)
+    const sortedWorkouts = workoutsWithExerciseCounts.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA; // Most recent first
+    });
+    
+    return sortedWorkouts;
   } catch (err) {
-    if (err instanceof Error) {
-      throw new Error(`Failed to fetch feed: ${err.message}`);
-    } else {
-      throw new Error(`Failed to fetch feed: Unknown error`);
-    }
+    console.error("Unexpected error in getFeed:", err);
+    throw err;
   }
 };
 
@@ -250,7 +288,6 @@ export const getLikesFeed = async (
               created_at: new Date().toISOString(),
               bio: null,
               fitness_level: null,
-              updated_at: new Date().toISOString(),
             },
           };
         }
@@ -333,20 +370,17 @@ export const toggleLike = async (
  * @returns The created workout or null if there was an error
  */
 export const createWorkout = async (
-  supabase: SupabaseClient,
-  user: User,
-  workoutData: {
-    title: string;
-    description: string;
-    duration_minutes: number;
-    visibility: string;
-    attachment_url?: string;
-  }
-): Promise<z.infer<typeof Workout> | null> => {
+  supabase,
+  user,
+  workoutData
+) => {
   if (!user) return null;
 
   try {
-    // Prepare the workout data with the user ID
+    // Create a timestamp for right now
+    const currentTimestamp = new Date().toISOString();
+    
+    // Prepare the workout data with the user ID and explicit timestamp
     const newWorkout = {
       user_id: user.id,
       title: workoutData.title,
@@ -354,7 +388,10 @@ export const createWorkout = async (
       duration_minutes: workoutData.duration_minutes,
       visibility: workoutData.visibility,
       attachment_url: workoutData.attachment_url || "",
+      created_at: currentTimestamp, // Explicitly set creation time
     };
+
+    console.log("Creating workout with data:", newWorkout);
 
     // Insert the workout into the database
     const { data, error } = await supabase
@@ -368,7 +405,8 @@ export const createWorkout = async (
       return null;
     }
 
-    return data as z.infer<typeof Workout>;
+    console.log("Successfully created workout:", data);
+    return data;
   } catch (err) {
     console.error("Unexpected error creating workout:", err);
     return null;
@@ -448,7 +486,6 @@ export const deleteWorkout = async (
   if (!user) return false;
 
   try {
-    // Delete the workout, ensuring it belongs to the current user
     const { error } = await supabase
       .from("workouts")
       .delete()
@@ -468,7 +505,46 @@ export const deleteWorkout = async (
 };
 
 /**
- * Upload an attachment for a workout
+ * Adds exercises to a workout
+ * 
+ * @param supabase Supabase client instance
+ * @param workoutId The ID of the workout to add exercises to
+ * @param exercises Array of exercise objects to add
+ * @returns Promise<boolean> indicating success or failure
+ */
+export async function addExercisesToWorkout(supabase, workoutId, exercises) {
+  try {
+    // Create an array of exercise entries with order positions
+    const exerciseEntries = exercises.map((exercise, index) => ({
+      workout_id: workoutId,
+      exercise_id: exercise.id,
+      order_position: index + 1, // 1-based indexing for order position
+    }));
+
+    // Log the entries being inserted for debugging
+    console.log("Inserting workout_exercises:", exerciseEntries);
+
+    // Insert the exercise entries into the workout_exercises table
+    const { data, error } = await supabase
+      .from("workout_exercises")
+      .insert(exerciseEntries);
+
+    if (error) {
+      console.error("Database error adding exercises:", error);
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error adding exercises to workout:", error);
+    // Return detailed error for debugging
+    console.error("Error details:", JSON.stringify(error, null, 2));
+    return false;
+  }
+};
+
+/**
+ * Upload an attachment for a workout with improved error handling
  * 
  * @param supabase Supabase client
  * @param user Current authenticated user
@@ -477,52 +553,59 @@ export const deleteWorkout = async (
  * @returns The attachment URL or null if there was an error
  */
 export const uploadWorkoutAttachment = async (
-  supabase: SupabaseClient,
-  user: User,
-  workoutId: string,
-  file: File
-): Promise<string | null> => {
-  if (!user) return null;
+  supabase,
+  user,
+  workoutId,
+  file
+) => {
+  if (!user || !workoutId || !file) return null;
 
   try {
-    // First check if the user owns this workout
-    const { data: workout, error: fetchError } = await supabase
-      .from("workouts")
-      .select("*")
-      .eq("id", workoutId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (fetchError || !workout) {
-      console.error("Error fetching workout or unauthorized:", fetchError);
-      return null;
-    }
-
-    // Create a unique file path
+    // Create a unique file path with a timestamp to avoid overwrites
     const fileExt = file.name.split(".").pop();
-    const filePath = `${user.id}/${workoutId}.${fileExt}`;
+    const timestamp = new Date().getTime();
+    const filePath = `${user.id}/${workoutId}_${timestamp}.${fileExt}`;
 
-    // Upload the file
-    const { error: uploadError } = await supabase.storage
-      .from("workout-attachments")
-      .upload(filePath, file, { upsert: true });
+    console.log("Uploading file:", { filePath, type: file.type });
+
+    // Change "workout-attachments" to "images" to match your bucket name
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("images")
+      .upload(filePath, file, { 
+        upsert: true,
+        contentType: file.type
+      });
 
     if (uploadError) {
       console.error("Error uploading attachment:", uploadError);
       return null;
     }
 
-    // Get the public URL
+    console.log("Successfully uploaded file:", uploadData);
+
+    // Get the public URL - use correct bucket name here too
     const { data: publicUrlData } = supabase.storage
-      .from("workout-attachments")
+      .from("images")
       .getPublicUrl(filePath);
+
+    if (!publicUrlData || !publicUrlData.publicUrl) {
+      console.error("Failed to get public URL for attachment");
+      return null;
+    }
 
     // Update the workout with the attachment URL
     const attachmentUrl = publicUrlData.publicUrl;
+    console.log("Attachment URL:", attachmentUrl);
+    
     const { error: updateError } = await supabase
       .from("workouts")
-      .update({ attachment_url: attachmentUrl })
-      .eq("id", workoutId);
+      .update({ 
+        attachment_url: attachmentUrl,
+        // 3. Fix the timestamp issue by explicitly updating created_at
+        created_at: new Date().toISOString()
+      })
+      .eq("id", workoutId)
+      .eq("user_id", user.id);
 
     if (updateError) {
       console.error("Error updating workout with attachment URL:", updateError);
@@ -533,5 +616,86 @@ export const uploadWorkoutAttachment = async (
   } catch (err) {
     console.error("Unexpected error uploading attachment:", err);
     return null;
+  }
+};
+
+
+/**
+ * Get exercises for a specific workout
+ * 
+ * @param supabase Supabase client
+ * @param workoutId ID of the workout
+ * @returns Array of exercises associated with the workout
+ */
+export const getWorkoutExercises = async (
+  supabase,
+  workoutId
+) => {
+  if (!workoutId) {
+    console.error("No workoutId provided to getWorkoutExercises");
+    return [];
+  }
+
+  try {
+    console.log(`Fetching exercises for workout ID: ${workoutId}`);
+    
+    // First, get the exercise IDs from the workout_exercises join table
+    const { data: workoutExercises, error: joinError } = await supabase
+      .from("workout_exercises")
+      .select(`
+        exercise_id,
+        order_position
+      `)
+      .eq("workout_id", workoutId)
+      .order("order_position", { ascending: true });
+
+    if (joinError) {
+      console.error("Error fetching workout_exercises join data:", joinError);
+      return [];
+    }
+
+    if (!workoutExercises || workoutExercises.length === 0) {
+      console.log(`No exercises found for workout ID: ${workoutId}`);
+      return [];
+    }
+
+    console.log(`Found ${workoutExercises.length} exercises in join table:`, workoutExercises);
+    
+    // Extract the exercise IDs
+    const exerciseIds = workoutExercises.map(we => we.exercise_id);
+    
+    // Now fetch the actual exercise details from the exercises table
+    const { data: exerciseData, error: exercisesError } = await supabase
+      .from("exercises")
+      .select(`
+        id,
+        name,
+        category,
+        muscle_group,
+        equipment
+      `)
+      .in("id", exerciseIds);
+
+    if (exercisesError) {
+      console.error("Error fetching exercise details:", exercisesError);
+      return [];
+    }
+
+    if (!exerciseData || exerciseData.length === 0) {
+      console.log("Exercise IDs were found but no exercise details were returned");
+      return [];
+    }
+
+    console.log(`Retrieved ${exerciseData.length} exercise details:`, exerciseData);
+    
+    // Sort the exercises based on the original order_position
+    const sortedExercises = exerciseIds.map(id => {
+      return exerciseData.find(exercise => exercise.id === id);
+    }).filter(Boolean); // Remove any nulls/undefined (just in case)
+    
+    return sortedExercises;
+  } catch (err) {
+    console.error("Unexpected error in getWorkoutExercises:", err);
+    return [];
   }
 };

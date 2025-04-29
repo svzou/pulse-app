@@ -1,16 +1,6 @@
-// @/components/ui/profile-card.tsx
-import React from 'react';
-
-interface UserProfileProps {
-  name: string;
-  handle: string;
-  avatarUrl: string;
-  stats: { label: string; value: number }[];
-}
-
-const UserProfile: React.FC<UserProfileProps> = ({ name, handle, avatarUrl, stats }) => {
+const UserProfile = ({ name, handle, avatarUrl, stats }) => {
   return (
-    <div className="p-4 border bg-card text-card-foreground shadow-sm">
+    <div className="p-4 bg-card text-card-foreground border-none shadow-none">
       <div className="flex items-center gap-3">
         <img src={avatarUrl} alt="Avatar" className="w-12 h-12 rounded-full" />
         <div>

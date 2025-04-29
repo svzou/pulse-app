@@ -22,7 +22,8 @@ import {
   Calendar,
   Eye,
   Trash2,
-  Edit
+  Edit,
+  Dumbbell
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -30,6 +31,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { Workout, WorkoutAuthor } from "@/utils/supabase/models/workout";
 import { formatDistanceToNow } from "date-fns";
 import { z } from "zod";
@@ -61,6 +63,7 @@ export default function WorkoutDetail({
   const [likesCount, setLikesCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [workoutExercises, setWorkoutExercises] = useState([]);
   
   const isOwner = user?.id === workout?.author?.id;
   
@@ -78,10 +81,47 @@ export default function WorkoutDetail({
         setLikesCount(count);
       };
 
+      // Fetch exercises for this workout
+      const fetchExercises = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("workout_exercises")
+            .select(`
+              id,
+              workout_id,
+              exercise_id,
+              order_position,
+              exercises (
+                id,
+                name,
+                category,
+                muscle_group,
+                description,
+                equipment,
+                image_url
+              )
+            `)
+            .eq("workout_id", workout.id)
+            .order("order_position", { ascending: true });
+            
+          if (error) {
+            console.error("Error fetching workout exercises:", error);
+            return;
+          }
+          
+          if (data) {
+            setWorkoutExercises(data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch workout exercises:", err);
+        }
+      };
+
       checkLiked();
       getLikes();
+      fetchExercises();
     }
-  }, [workout?.id, user?.id]);
+  }, [workout?.id, user?.id, supabase]);
 
   const handleLike = async () => {
     if (loading || !user) return;
@@ -201,6 +241,40 @@ export default function WorkoutDetail({
                 </div>
               </div>
             </div>
+
+            {/* Exercises Section */}
+            {workoutExercises.length > 0 && (
+              <div className="py-3 border-t border-b">
+                <h3 className="font-medium flex items-center gap-2 mb-2">
+                  <Dumbbell size={16} />
+                  Exercises
+                </h3>
+                <div className="space-y-2">
+                  {workoutExercises.map((item, index) => (
+                    <div key={item.id} className="bg-gray-50 dark:bg-gray-800 rounded-md p-3">
+                      <div className="flex justify-between">
+                        <div>
+                          <h4 className="font-medium">
+                            {index + 1}. {item.exercises?.name || 'Unknown Exercise'}
+                          </h4>
+                          <p className="text-sm text-gray-500">
+                            {item.exercises?.muscle_group} • {item.exercises?.equipment || 'No equipment'}
+                          </p>
+                        </div>
+                        <Badge variant="outline">
+                          {item.exercises?.category || 'Exercise'}
+                        </Badge>
+                      </div>
+                      {item.exercises?.description && (
+                        <p className="text-sm mt-2 text-gray-600 dark:text-gray-400">
+                          {item.exercises.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-between items-center pt-2 border-t">
               <div className="flex items-center space-x-4">
