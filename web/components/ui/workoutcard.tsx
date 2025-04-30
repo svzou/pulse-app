@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/router';
 import { 
   Heart, 
   ChevronDown, 
@@ -11,7 +12,8 @@ import {
   Eye, 
   Dumbbell,
   Calendar, 
-  Loader2
+  Loader2,
+  Router
 } from 'lucide-react';
 import { getWorkoutExercises } from '@/utils/supabase/queries/workout';
 import { Badge } from '@/components/ui/badge';
@@ -137,13 +139,15 @@ export default function WorkoutCard({
       .substring(0, 2);
   };
   
+  const router = useRouter(); 
   return (
     <>
       <Card className="p-4 overflow-hidden">
         <div className="flex justify-between items-start">
           <div className="flex-1">
             {/* Author section */}
-            <div className="flex items-center mb-3">
+            <div className="flex items-center mb-3"
+              onClick={() => router.push(`/profile/${workout.profiles?.id || workout.author?.id}`)}>
               <Avatar className="h-8 w-8 mr-2">
                 <AvatarImage src={authorAvatar || undefined} alt={authorName} />
                 <AvatarFallback>{getInitials(authorName)}</AvatarFallback>

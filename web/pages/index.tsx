@@ -85,7 +85,9 @@ export default function Home({ user, profile }: HomeProps) {
             profiles:user_id (
               id,
               full_name,
-              avatar_url
+              avatar_url,
+              followers,
+              following,
             )
           `)
           .order("created_at", { ascending: false });
@@ -133,8 +135,8 @@ export default function Home({ user, profile }: HomeProps) {
         avatarUrl={profile.avatar_url || "/images/default-avatar.png"}
         stats={[
           { label: 'Workouts', value: workoutCount },
-          { label: 'Followers', value: profile?.Followers?.length || 0 },
-          { label: 'Following', value: profile?.Following?.length || 0 },
+          { label: 'Followers', value: profile?.followers?.length || 0 },
+          { label: 'Following', value: profile?.following?.length || 0 },
         ]}
       />
     </div>

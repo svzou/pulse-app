@@ -44,7 +44,7 @@ const data = {
     },
     {
       name: "Profile",
-      url: "/profile",
+      url: "/user",
       icon: User,
     },
   ],

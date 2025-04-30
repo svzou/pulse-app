@@ -169,7 +169,6 @@ export default function ProfilePage({
         setWorkouts(recentWorkouts);
       }
 
-      // Get workout photos
       const { data: workoutPhotos, error: photosError } = await supabase
         .from("workouts")
         .select("attachment_url")
@@ -182,7 +181,7 @@ export default function ProfilePage({
 
       if (workoutPhotos) {
         console.log("Photos loaded:", workoutPhotos);
-        setPhotos(workoutPhotos.map((w) => w.attachment_url!));
+        setPhotos(workoutPhotos.map((w) => w.attachment_url));
       }
 
       // Get followers count
@@ -394,6 +393,11 @@ export default function ProfilePage({
     );
   }
 
+  // Calculate total workout duration if stats is not available
+  const totalWorkoutDuration = workouts.length > 0 
+    ? workouts.reduce((total: number, workout: any) => total + (workout.duration_minutes || 0), 0)
+    : 0;
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -516,29 +520,17 @@ export default function ProfilePage({
               <BarChart className="w-5 h-5" />
               Workout Statistics
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">Total Workouts</p>
                 <p className="text-2xl font-bold">
-                  {stats?.total_workouts || 0}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600">Total Weight</p>
-                <p className="text-2xl font-bold">
-                  {stats?.total_weight_ever || 0}kg
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600">Total Reps</p>
-                <p className="text-2xl font-bold">
-                  {stats?.total_reps_ever || 0}
+                  {stats?.total_workouts || workouts.length || 0}
                 </p>
               </div>
               <div>
                 <p className="text-gray-600">Total Duration</p>
                 <p className="text-2xl font-bold">
-                  {stats?.total_duration_ever || 0}min
+                  {stats?.total_duration_ever || totalWorkoutDuration || 0}min
                 </p>
               </div>
             </div>
@@ -571,6 +563,11 @@ export default function ProfilePage({
                     </div>
                   </Card>
                 ))}
+                {workouts.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    No workouts yet. Add your first workout!
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </Card>
@@ -584,14 +581,22 @@ export default function ProfilePage({
               Workout Photos
             </h2>
             <div className="grid grid-cols-2 gap-2">
-              {photos.map((photo, index) => (
+              {photos.map((photo, index) => {
+                if(photo) return (
                 <img
                   key={index}
                   src={photo}
                   alt={`Workout photo ${index + 1}`}
                   className="w-full h-32 object-cover rounded-lg"
                 />
-              ))}
+                );
+                return null;
+              })}
+              {photos.filter(p => p).length === 0 && (
+                <div className="col-span-2 text-center py-8 text-gray-500">
+                  No workout photos yet
+                </div>
+              )}
             </div>
           </Card>
         </div>
