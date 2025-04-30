@@ -202,7 +202,7 @@ export default function WorkoutCard({
             
             {/* Actions section */}
             <div className="flex items-center mt-3">
-              <Button
+              <Button id="actions"
                 variant="ghost"
                 size="sm"
                 onClick={handleLike}
@@ -214,7 +214,7 @@ export default function WorkoutCard({
               <span className="text-sm text-gray-500">{likesCount} likes</span>
               
               {exercises.length > 0 && (
-                <Button
+                <Button id="show deets"
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowDetails(!showDetails)}

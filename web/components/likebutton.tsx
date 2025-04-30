@@ -31,7 +31,7 @@ export function LikeButton({ workoutId }: LikeButtonProps) {
   };
 
   return (
-    <button onClick={handleLike} className="flex items-center space-x-1">
+    <button id="like" onClick={handleLike} className="flex items-center space-x-1">
       <Heart fill={liked ? "red" : "none"} className="w-5 h-5" />
       <span>{count}</span>
     </button>

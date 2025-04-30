@@ -80,7 +80,7 @@ export function CommentSection({ postId, userId }: CommentSectionProps) {
           placeholder="Add a comment..."
           className="border rounded px-2 py-1 flex-1"
         />
-        <Button onClick={handleSubmitComment}>Post</Button>
+        <Button id="submit" onClick={handleSubmitComment}>Post</Button>
       </div>
       <div className="space-y-2">
         {comments.map((comment) => (

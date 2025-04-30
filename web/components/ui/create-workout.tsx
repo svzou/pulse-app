@@ -79,7 +79,7 @@ const ExerciseSelector = ({ selectedExercises, onExerciseAdd, onExerciseRemove }
             ))}
           </SelectContent>
         </Select>
-        <Button type="button" onClick={handleAddExercise} size="sm">
+        <Button id="add exercise" type="button" onClick={handleAddExercise} size="sm">
           <Plus size={16} />
         </Button>
       </div>

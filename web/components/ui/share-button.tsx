@@ -56,10 +56,10 @@ export function ShareButton({ postId, userId }: ShareButtonProps) {
 
   return (
     <div className="flex gap-2">
-      <Button onClick={handleCopyLink}>
+      <Button id="copy" onClick={handleCopyLink}>
         {copied ? 'Copied!' : 'Copy Link'}
       </Button>
-      <Button variant="outline" onClick={handleRepost}>
+      <Button id="repost" variant="outline" onClick={handleRepost}>
         Repost ({shareCount})
       </Button>
     </div>

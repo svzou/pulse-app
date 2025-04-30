@@ -383,7 +383,7 @@ export default function ProfilePage({
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p>Please log in to view your profile</p>
-          <Button
+          <Button id="loginbutton"
             className="mt-4"
             onClick={() => (window.location.href = "/login")}
           >
@@ -426,7 +426,7 @@ export default function ProfilePage({
               <h1 className="text-2xl font-bold">{user.full_name}</h1>
               <p className="text-gray-600">@{user.id}</p>
               {user.bio && <p className="mt-2 text-center">{user.bio}</p>}
-              <Button
+              <Button id="is editing"
                 variant="outline"
                 size="sm"
                 className="mt-4"
@@ -548,7 +548,7 @@ export default function ProfilePage({
           <Card className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Recent Workouts</h2>
-              <Button>
+              <Button id="pluscircle">
                 <PlusCircle className="w-4 h-4 mr-2" />
                 Add Workout
               </Button>
@@ -626,7 +626,7 @@ export default function ProfilePage({
                         />
                       </div>
                       <div className="flex-1">
-                        <Button
+                        <Button id="avatar"
                           variant="outline"
                           className="w-full relative overflow-hidden"
                           disabled={uploadingAvatar}
@@ -664,13 +664,13 @@ export default function ProfilePage({
                     />
                   </div>
                   <div className="flex gap-2 justify-end pt-4">
-                    <Button
+                    <Button id="isediting"
                       variant="outline"
                       onClick={() => setIsEditing(false)}
                     >
                       Cancel
                     </Button>
-                    <Button onClick={handleProfileUpdate}>Save Changes</Button>
+                    <Button id="savechanges" onClick={handleProfileUpdate}>Save Changes</Button>
                   </div>
                 </div>
               </div>

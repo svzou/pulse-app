@@ -6,6 +6,7 @@ import type { AppProps } from "next/app";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import AppSidebar from "@/components/app-sidebar"
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import Head from "next/head";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,13 @@ export default function App({ Component, pageProps }: AppProps) {
           enableSystem
           disableTransitionOnChange
         >
+           <Head>
+        <title>My Fitness App</title> {/* Default fallback */}
+        <meta
+          name="description"
+          content="Your all-in-one fitness tracking and workout sharing platform."
+        />
+      </Head>
           <div className="flex flex-row w-full h-screen">
             <AppSidebar  />
             <div className="flex-1 flex flex-col h-screen">

@@ -89,7 +89,7 @@ export default function CreatePost({ user }) {
   return (
     <div className="my-4">
       {!showForm ? (
-        <Button 
+        <Button id="toggle form"
           onClick={toggleForm}
           className="w-full flex items-center gap-2 bg-black text-white dark:bg-white dark:text-black"
         >
@@ -157,7 +157,7 @@ export default function CreatePost({ user }) {
               )}
               
               <div className="flex gap-2">
-                <Button
+                <Button id="submit"
                   type="submit"
                   disabled={isSubmitting}
                   className="bg-black text-white dark:bg-white dark:text-black"
@@ -172,7 +172,7 @@ export default function CreatePost({ user }) {
                   )}
                 </Button>
                 
-                <Button
+                <Button id="toggle"
                   type="button"
                   variant="outline"
                   onClick={toggleForm}

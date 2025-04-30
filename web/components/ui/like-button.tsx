@@ -80,7 +80,7 @@ export function LikeButton({ postId, userId }: LikeButtonProps) {
   };
 
   return (
-    <Button variant={liked ? 'default' : 'outline'} onClick={handleLike}>
+    <Button id="likebutton" variant={liked ? 'default' : 'outline'} onClick={handleLike}>
       {liked ? 'Unlike' : 'Like'} ({likeCount})
     </Button>
   );

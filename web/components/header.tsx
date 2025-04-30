@@ -63,6 +63,7 @@ export default function Header() {
           <div className="h-10 w-24 rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
         ) : user ? (    
             <Button 
+              id="sign out"
               onClick={handleSignOut}
               className="bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
             >
@@ -71,6 +72,7 @@ export default function Header() {
             </Button>
         ) : (
           <Button
+            id="sign in"
             onClick={handleSignIn}
             className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 flex items-center gap-2"
           >

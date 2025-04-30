@@ -278,7 +278,7 @@ export default function WorkoutDetail({
 
             <div className="flex justify-between items-center pt-2 border-t">
               <div className="flex items-center space-x-4">
-                <Button 
+                <Button id="handle like"
                   variant="ghost" 
                   size="sm" 
                   onClick={handleLike}
@@ -290,7 +290,7 @@ export default function WorkoutDetail({
                   />
                   <span>{likesCount}</span>
                 </Button>
-                <Button
+                <Button id="message square"
                   variant="ghost"
                   size="sm"
                   className="flex items-center gap-1"
@@ -298,7 +298,7 @@ export default function WorkoutDetail({
                   <MessageSquare className="w-5 h-5 text-gray-500" />
                   <span>0</span>
                 </Button>
-                <Button
+                <Button id="share"
                   variant="ghost"
                   size="sm"
                   className="flex items-center gap-1"
@@ -310,7 +310,7 @@ export default function WorkoutDetail({
               {isOwner && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button id="more horiz" variant="ghost" size="sm">
                       <MoreHorizontal className="w-5 h-5 text-gray-500" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -345,9 +345,9 @@ export default function WorkoutDetail({
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button id="dialog" variant="outline">Cancel</Button>
             </DialogClose>
-            <Button 
+            <Button id="destructive"
               variant="destructive" 
               onClick={handleDeleteWorkout}
               disabled={loading}

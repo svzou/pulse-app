@@ -142,7 +142,7 @@ export default function Home({ user, profile }: HomeProps) {
       {/* Create Post Button or Form */}
       <div className="mx-4 mb-6">
         {!showCreateForm ? (
-          <Button 
+          <Button id="create form"
             onClick={toggleCreateForm}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
           >
@@ -153,7 +153,7 @@ export default function Home({ user, profile }: HomeProps) {
           <div className="bg-background border border-border rounded-xl shadow-md p-4 mb-4 transition-all relative">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Create New Workout</h3>
-              <Button
+              <Button id="toggle create form"
                 variant="ghost"
                 size="sm"
                 onClick={toggleCreateForm}
@@ -172,13 +172,13 @@ export default function Home({ user, profile }: HomeProps) {
         <div className="flex flex-row items-center gap-3 mx-4 mb-4">
         <TabsList className="grid grid-cols-3 w-full h-[52px] bg-muted rounded-xl p-1.5 shadow-sm border border-border">            <TabsTrigger
               value={HomePageTab.FOR_YOU}
-              className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
+              className="rounded-lg text-gray-700 dark:text-gray-500 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               For You
             </TabsTrigger>
             <TabsTrigger
               value={HomePageTab.FOLLOWING}
-              className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
+              className="rounded-lg text-gray-700 dark:text-gray-500 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               Following
             </TabsTrigger>
@@ -189,7 +189,8 @@ export default function Home({ user, profile }: HomeProps) {
               Liked
             </TabsTrigger>
           </TabsList>
-          <Button
+          <Button 
+            id="refresh"
             variant="secondary"
             size="sm"
             onClick={refresh}
