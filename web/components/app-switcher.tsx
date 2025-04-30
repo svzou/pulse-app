@@ -116,11 +116,7 @@ const data = {
       url: "#",
       icon: Frame,
     },
-    {
-      name: "Workout History",
-      url: "#",
-      icon: PieChart,
-    },
+    
     {
       name: "Exercise Library",
       url: "#",

@@ -68,9 +68,9 @@ const ExerciseSelector = ({ selectedExercises, onExerciseAdd, onExerciseRemove }
           </SelectTrigger>
           <SelectContent 
             position="popper" 
-            className="max-h-60 overflow-y-auto bg-background/95 backdrop-blur-sm"
+            className="z-50 max-h-60 overflow-y-auto bg-white"
             align="start"
-            sideOffset={5}
+            sideOffset={8}
           >
             {exercises.map((exercise) => (
               <SelectItem key={exercise.id} value={exercise.id}>
@@ -363,7 +363,7 @@ export default function CreateWorkout({ user }: { user: User }) {
               </SelectTrigger>
               <SelectContent
                 position="popper" 
-                className="max-h-60 overflow-y-auto bg-background/95 backdrop-blur-sm"
+                className="max-h-60 overflow-y-auto bg-white"
                 align="start"
                 sideOffset={5}
               >
@@ -447,7 +447,7 @@ export default function CreateWorkout({ user }: { user: User }) {
 
         <Button
           type="submit"
-          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+          className="w-full bg-sky-700 hover:bg-sky-600"
           disabled={isSubmitting}
         >
           {isSubmitting ? (

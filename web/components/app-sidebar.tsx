@@ -32,15 +32,11 @@ const data = {
       url: "/",
       icon: House,
     },
-    {
-      name: "Workout History",
-      url: "workout-history",
-      icon: BicepsFlexed,
-    },
+    
     {
       name: "Exercise Library",
       url: "exercise-library",
-      icon: Dumbbell,
+      icon: BicepsFlexed,
     },
     {
       name: "Profile",
