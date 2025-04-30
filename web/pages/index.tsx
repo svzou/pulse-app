@@ -125,10 +125,9 @@ export default function Home({ user, profile }: HomeProps) {
   }
 
   return (
-    <div className="flex flex-col w-full mx-auto max-w-[600px] min-h-screen pt-6 pb-20 border-none">
+    <div className="flex flex-col w-full mx-auto max-w-[600px] min-h-screen pt-6 pb-20 text-foreground bg-background transition-colors duration-300">
       {/* Profile Card */}
-      <div className="mx-4 mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all hover:shadow-lg border-none">
-      <UserProfile
+      <div className="mx-4 mb-8 rounded-xl bg-background border border-border shadow-md p-6 transition-shadow hover:shadow-lg">      <UserProfile
         name={profile?.full_name || 'User'}
         handle={`@${profile?.email?.split('@')[0] || 'user'}`}
         avatarUrl={profile.avatar_url || "/images/default-avatar.png"}
@@ -151,14 +150,14 @@ export default function Home({ user, profile }: HomeProps) {
             Share Your Workout
           </Button>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-4 transition-all border-none relative">
+          <div className="bg-background border border-border rounded-xl shadow-md p-4 mb-4 transition-all relative">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Create New Workout</h3>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleCreateForm}
-                className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/10 dark:hover:bg-muted/20"
               >
                 <X size={18} />
               </Button>
@@ -171,8 +170,7 @@ export default function Home({ user, profile }: HomeProps) {
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full">
         <div className="flex flex-row items-center gap-3 mx-4 mb-4">
-          <TabsList className="grid grid-cols-3 w-full h-[52px] bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 shadow-sm border-none">
-            <TabsTrigger
+        <TabsList className="grid grid-cols-3 w-full h-[52px] bg-muted rounded-xl p-1.5 shadow-sm border border-border">            <TabsTrigger
               value={HomePageTab.FOR_YOU}
               className="rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-black dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
@@ -195,8 +193,7 @@ export default function Home({ user, profile }: HomeProps) {
             variant="secondary"
             size="sm"
             onClick={refresh}
-            className="rounded-full w-12 h-12 flex items-center justify-center bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors shadow-sm"
-            disabled={loading}
+            className="rounded-full w-12 h-12 flex items-center justify-center bg-background border border-border hover:bg-muted/10 dark:hover:bg-muted/20 transition-colors shadow-sm"            disabled={loading}
           >
             {loading ? (
               <div className="w-5 h-5 border-t-2 border-b-2 border-gray-600 dark:border-gray-300 rounded-full animate-spin"></div>
@@ -207,8 +204,8 @@ export default function Home({ user, profile }: HomeProps) {
         </div>
 
         {/* Feed Content */}
-        <div className="mt-2 bg-gray-50 dark:bg-gray-900 rounded-xl mx-4 p-2 border-none outline-none">
-          <TabsContent value={HomePageTab.FOR_YOU}>
+        <div className="mt-2 bg-muted rounded-xl mx-4 p-2 border border-border">
+                    <TabsContent value={HomePageTab.FOR_YOU}>
             <Feed 
               user={user} 
               workouts={workouts} 

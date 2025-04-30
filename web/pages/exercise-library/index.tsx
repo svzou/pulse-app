@@ -72,33 +72,33 @@ export default function ExerciseLibrary() {
       </div>
 
       {/* Right Sidebar - Fixed Position */}
-      <aside className="w-64 min-w-64 flex-shrink-0 fixed right-6 top-24 h-[calc(100vh-6rem)]"> {/* Changed top-6 to top-24 */}
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm h-full flex flex-col">
-          <h2 className="text-lg font-semibold mb-2">Exercise Library</h2>
-          <input
-            type="text"
-            placeholder="Search exercises..."
-            className="w-full mb-3 p-2 border rounded"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <ul className="space-y-1 overflow-y-auto flex-1">
-            {filtered.map((ex) => (
-              <li key={ex.id}>
-                <button
-                  onClick={() => setSelected(ex)}
-                  className={`w-full text-left px-3 py-2 border border-black rounded hover:bg-sky-200 transition ${
-                    selected?.id === ex.id ? "bg-sky-200 font-semibold" : ""
-                  }`}
-                >
-                  {ex.name}{" "}
-                  <span className="text-sm text-gray-500">({ex.muscle_group})</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </aside>
+      <aside className="w-64 min-w-64 flex-shrink-0 fixed right-6 top-24 h-[calc(100vh-6rem)]">
+  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
+    <h2 className="text-lg font-semibold mb-2 text-black dark:text-white">Exercise Library</h2>
+    <input
+      type="text"
+      placeholder="Search exercises..."
+      className="w-full mb-3 p-2 border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+    <ul className="space-y-1 overflow-y-auto flex-1">
+      {filtered.map((ex) => (
+        <li key={ex.id}>
+          <button
+            onClick={() => setSelected(ex)}
+            className={`w-full text-left px-3 py-2 border border-black dark:border-gray-600 rounded hover:bg-sky-200 dark:hover:bg-gray-700 transition ${
+              selected?.id === ex.id ? "bg-sky-200 dark:bg-blue-600 font-semibold text-black dark:text-white" : "text-black dark:text-gray-200"
+            }`}
+          >
+            {ex.name}{" "}
+            <span className="text-sm text-gray-500 dark:text-gray-400">({ex.muscle_group})</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  </div>
+</aside>
     </div>
   );
 }
