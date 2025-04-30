@@ -72,7 +72,7 @@ export default function ExerciseLibrary() {
       </div>
 
       {/* Right Sidebar - Fixed Position */}
-      <aside className="w-64 min-w-64 flex-shrink-0 fixed right-6 top-24 h-[calc(100vh-6rem)]">
+      <aside className="w-64 min-w-64 flex-shrink-0 fixed right-6 top-42 h-[calc(100vh-6rem)]">
   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
     <h2 className="text-lg font-semibold mb-2 text-black dark:text-white">Exercise Library</h2>
     <input
