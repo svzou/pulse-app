@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart, PlusCircle, Image as ImageIcon, Edit, Users } from "lucide-react";
@@ -8,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createSupabaseServerClient } from '@/utils/supabase/clients/server-props';
+import { getProfileData } from '@/utils/supabase/queries/profile';
 
 export default function ProfilePage() {
   const supabase = createClientComponentClient();
@@ -30,27 +32,10 @@ export default function ProfilePage() {
   const [loggedInUser, setLoggedInUser] = useState<any>(null);
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setLoggedInUser(session.user);
-        } else {
-          setLoggedInUser(null);
-        }
-      }
-    );
-  
-    // Also fetch once immediately
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setLoggedInUser(session.user);
-      }
-    });
-  
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+    if (!user) {
+      router.push('/login');
+    }
+  }, [user, router]);
 
   const fetchProfileData = async (userId: string) => {
     try {
@@ -322,6 +307,11 @@ export default function ProfilePage() {
     );
   }
 
+    // If user is not logged in, don't render anything while redirecting
+    if (!user) {
+      return null;
+    }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -590,4 +580,27 @@ export default function ProfilePage() {
       )}
     </div>
   );
+}
+
+export async function getServerSideProps(context) {
+  const supabase = createSupabaseServerClient(context);
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  const profile = await getProfileData(supabase, userData.user, userData.user.id);
+
+  return {
+    props: {
+      user: userData.user,
+      profile: profile,
+    },
+  };
 }
