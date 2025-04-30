@@ -11,7 +11,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createSupabaseServerClient } from '@/utils/supabase/clients/server-props';
 import { getProfileData } from '@/utils/supabase/queries/profile';
 
-export default function ProfilePage() {
+export default function ProfilePage({ user: initialUser, profile: initialProfile }) {
   const supabase = createClientComponentClient();
   const router = useRouter();
   const [workouts, setWorkouts] = useState<any[]>([]);
@@ -20,7 +20,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(initialProfile || null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState(null);
   const [followers, setFollowers] = useState<any[]>([]);
@@ -29,16 +29,12 @@ export default function ProfilePage() {
   const [followingCount, setFollowingCount] = useState(0);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState<any>(null);
-
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
+  const [loggedInUser, setLoggedInUser] = useState<any>(initialUser);
+  const [loading, setLoading] = useState(true);
 
   const fetchProfileData = async (userId: string) => {
     try {
+      setLoading(true);
       console.log("Fetching profile data for user:", userId);
 
       // user profile
@@ -133,16 +129,29 @@ export default function ProfilePage() {
         setFollowingCount(followingCount || 0);
       }
 
+      setLoading(false);
       return profile;
     } catch (error) {
       console.error("Fetch error:", error);
+      setLoading(false);
     }   
   };
 
   useEffect(() => {
+    // Check auth status on client-side
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user) {
+        setLoggedInUser(data.session.user);
+      }
+    };
+    
+    checkUser();
+  }, []);
+
+  useEffect(() => {
     if (router.query.id) {
       fetchProfileData(router.query.id as string);
-      // fetchLoggedInUser();
     }
   }, [router.query.id]);
 
@@ -297,7 +306,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -307,10 +316,19 @@ export default function ProfilePage() {
     );
   }
 
-    // If user is not logged in, don't render anything while redirecting
-    if (!user) {
-      return null;
-    }
+  if (!user && !loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Profile not found</h2>
+          <p className="text-gray-600 mb-4">The user profile you're looking for doesn't exist or you don't have permission to view it.</p>
+          <Button onClick={() => router.push('/')}>
+            Return Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -325,6 +343,7 @@ export default function ProfilePage() {
                   alt={user.id}
                   className="w-full h-full object-cover"
                 />
+                {loggedInUser?.id === user.id && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
                   <label className="w-full h-full flex items-center justify-center cursor-pointer">
                     <input
@@ -340,6 +359,7 @@ export default function ProfilePage() {
                     )}
                   </label>
                 </div>
+                )}
               </div>
               <h1 className="text-2xl font-bold">{user.full_name}</h1>
               <p className="text-gray-600">@{user.id}</p>
@@ -443,7 +463,7 @@ export default function ProfilePage() {
               <div>
                 <p className="text-gray-600">Total Duration</p>
                 <p className="text-2xl font-bold">
-                  {workouts.map((x) => x.duration_minutes).reduce((acc, a) => acc+a, 0)}min
+                  {workouts.length > 0 ? workouts.map((x) => x.duration_minutes).reduce((acc, a) => acc+a, 0) : 0}min
                 </p>
               </div>
             </div>
@@ -455,22 +475,26 @@ export default function ProfilePage() {
             </div>
             <ScrollArea className="h-[400px]">
               <div className="space-y-4">
-                {workouts.map((workout) => (
-                  <Card key={workout.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold">{workout.title}</h3>
-                        <p className="text-gray-600">{workout.description}</p>
-                        <p className="text-sm text-gray-500 mt-2">
-                          Duration: {workout.duration_minutes} minutes
-                        </p>
+                {workouts.length > 0 ? (
+                  workouts.map((workout) => (
+                    <Card key={workout.id} className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold">{workout.title}</h3>
+                          <p className="text-gray-600">{workout.description}</p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Duration: {workout.duration_minutes} minutes
+                          </p>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {new Date(workout.created_at).toLocaleDateString()}
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {new Date(workout.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500 py-4">No workouts yet</p>
+                )}
               </div>
             </ScrollArea>
           </Card>
@@ -483,15 +507,19 @@ export default function ProfilePage() {
               Workout Photos
             </h2>
             <div className="grid grid-cols-2 gap-2">
-              {photos.map((photo, index) => {
-                if(photo) return (
-                <img
-                  key={index}
-                  src={photo}
-                  alt={`Workout photo ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-lg"
-                />
-)})}
+              {photos.length > 0 ? (
+                photos.map((photo, index) => {
+                  if(photo) return (
+                  <img
+                    key={index}
+                    src={photo}
+                    alt={`Workout photo ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                )})
+              ) : (
+                <p className="col-span-2 text-center text-gray-500 py-4">No workout photos yet</p>
+              )}
             </div>
           </Card>
         </div>
@@ -586,21 +614,44 @@ export async function getServerSideProps(context) {
   const supabase = createSupabaseServerClient(context);
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  if (userError || !userData) {
+  if (userError) {
+    console.error("Auth error in getServerSideProps:", userError);
+  }
+
+  // Even if there's no logged-in user, we still want to fetch the profile for the requested ID
+  const userId = context.params?.id;
+  
+  if (!userId) {
     return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      },
+      notFound: true,
     };
   }
 
-  const profile = await getProfileData(supabase, userData.user, userData.user.id);
+  try {
+    // Get the profile of the requested user
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (profileError) {
+      console.error("Profile fetch error in getServerSideProps:", profileError);
+      return {
+        notFound: true,
+      };
+    }
 
-  return {
-    props: {
-      user: userData.user,
-      profile: profile,
-    },
-  };
+    return {
+      props: {
+        user: userData?.user || null,
+        profile: profile || null,
+      },
+    };
+  } catch (error) {
+    console.error("Error in getServerSideProps:", error);
+    return {
+      notFound: true,
+    };
+  }
 }
