@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart, PlusCircle, Image as ImageIcon, Edit, Users } from "lucide-react";
+import { BarChart, PlusCircle, Image as ImageIcon, Edit, Users, UserPlus, UserMinus } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,29 +10,32 @@ import Link from "next/link";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createSupabaseServerClient } from '@/utils/supabase/clients/server-props';
 import { getProfileData } from '@/utils/supabase/queries/profile';
+import { toast } from "sonner";
 
 export default function ProfilePage({ user: initialUser, profile: initialProfile }) {
   const supabase = createClientComponentClient();
   const router = useRouter();
-  const [workouts, setWorkouts] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [photos, setPhotos] = useState<any[]>([]);
+  const [workouts, setWorkouts] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [photos, setPhotos] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [user, setUser] = useState<any>(initialProfile || null);
+  const [user, setUser] = useState(initialProfile || null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState(null);
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [following, setFollowing] = useState<any[]>([]);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState<any>(initialUser);
+  const [loggedInUser, setLoggedInUser] = useState(initialUser);
   const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
-  const fetchProfileData = async (userId: string) => {
+  const fetchProfileData = async (userId) => {
     try {
       setLoading(true);
       console.log("Fetching profile data for user:", userId);
@@ -137,6 +140,140 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
     }   
   };
 
+  // Check if logged-in user is following profile user
+  const checkFollowStatus = async () => {
+    if (!loggedInUser?.id || !router.query.id || loggedInUser?.id === router.query.id) {
+      return;
+    }
+
+    try {
+      console.log("Checking follow status:", {
+        followerId: loggedInUser.id,
+        followingId: router.query.id
+      });
+      
+      const { data, error } = await supabase
+        .from("following")
+        .select("*")
+        .eq("follower_id", loggedInUser.id)
+        .eq("following_id", router.query.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error("Follow status check error:", error);
+        return;
+      }
+
+      console.log("Follow status check result:", data ? "Following" : "Not following");
+      setIsFollowing(!!data);
+    } catch (error) {
+      console.error("Error checking follow status:", error);
+    }
+  };
+
+  // Handle follow/unfollow action
+  const handleFollowAction = async () => {
+    if (!loggedInUser?.id || !router.query.id) {
+      // Redirect to login if not logged in
+      router.push('/login');
+      return;
+    }
+  
+    try {
+      setFollowLoading(true);
+      console.log("Attempting follow action:", { 
+        followerId: loggedInUser.id, 
+        followingId: router.query.id,
+        currentStatus: isFollowing ? "following" : "not following" 
+      });
+      
+      if (isFollowing) {
+        // Unfollow user
+        console.log("Unfollowing user");
+        const { error } = await supabase
+          .from("following")
+          .delete()
+          .eq("follower_id", loggedInUser.id)
+          .eq("following_id", router.query.id);
+  
+        if (error) {
+          console.error("Unfollow error details:", error);
+          throw error;
+        }
+  
+        console.log("Successfully unfollowed");
+        setIsFollowing(false);
+        setFollowersCount(prev => Math.max(0, prev - 1));
+        
+        toast.success("Unfollowed user", {
+          description: "You'll no longer see their workouts in your feed",
+          duration: 3000,
+        });
+      } else {
+        // Follow user
+        console.log("Following user");
+        
+        // Check if entry already exists
+        const { data: existingFollow, error: checkError } = await supabase
+          .from("following")
+          .select("*")
+          .eq("follower_id", loggedInUser.id)
+          .eq("following_id", router.query.id)
+          .maybeSingle();
+          
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error("Check follow status error:", checkError);
+        }
+        
+        // Only insert if not already following
+        if (!existingFollow) {
+          // Make sure we're using the ID as a string, not an array
+          const followerId = typeof loggedInUser.id === 'string' ? loggedInUser.id : String(loggedInUser.id);
+          const followingId = typeof router.query.id === 'string' ? router.query.id : String(router.query.id);
+          
+          const { error } = await supabase
+            .from("following")
+            .insert({
+              follower_id: followerId,
+              following_id: followingId
+            });
+  
+          if (error) {
+            console.error("Follow error details:", error);
+            throw error;
+          }
+          
+          console.log("Successfully followed");
+        } else {
+          console.log("Already following, no need to insert");
+        }
+  
+        setIsFollowing(true);
+        setFollowersCount(prev => prev + 1);
+        
+        toast.success("Following user", {
+          description: "You'll now see their workouts in your feed",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Follow action error:", error);
+      setError("Failed to update follow status");
+      
+      // Log detailed error information for debugging
+      if (error.details) console.error("Error details:", error.details);
+      if (error.hint) console.error("Error hint:", error.hint);
+      if (error.code) console.error("Error code:", error.code);
+      
+      toast.error("Failed to update follow status", {
+        description: "Please try again later",
+        duration: 5000,
+      });
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Check auth status on client-side
     const checkUser = async () => {
@@ -151,9 +288,15 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
 
   useEffect(() => {
     if (router.query.id) {
-      fetchProfileData(router.query.id as string);
+      fetchProfileData(router.query.id);
     }
   }, [router.query.id]);
+
+  useEffect(() => {
+    if (loggedInUser?.id && router.query.id) {
+      checkFollowStatus();
+    }
+  }, [loggedInUser, router.query.id]);
 
   const fetchFollowers = async () => {
     if (!router.query?.id) return;
@@ -219,7 +362,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
     }
   };
 
-  const uploadAvatar = async (e: any) => {
+  const uploadAvatar = async (e) => {
     try {
       setError(null);
       setUploadingAvatar(true);
@@ -264,13 +407,19 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
       }
 
       setAvatarUrl(publicUrl);
-      setUser((prev: any|null) => (prev ? { ...prev, avatar_url: publicUrl } : null));
+      setUser((prev) => (prev ? { ...prev, avatar_url: publicUrl } : null));
+
+      // Show success toast
+      toast.success("Profile picture updated");
 
       // Refreshing profile data
-      await fetchProfileData(router.query.id as string);
-    } catch (error: any) {
+      await fetchProfileData(router.query.id);
+    } catch (error) {
       console.error("Error uploading avatar:", error);
       setError(error.message || "Failed to upload avatar");
+      toast.error("Failed to upload avatar", {
+        description: error.message || "Please try again later",
+      });
     } finally {
       setUploadingAvatar(false);
     }
@@ -298,11 +447,15 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
         throw updateError;
       }
 
-      await fetchProfileData(router.query.id as string);
+      toast.success("Profile updated successfully");
+      await fetchProfileData(router.query.id);
       setIsEditing(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Profile update error:", error);
       setError(error.message || "Failed to update profile");
+      toast.error("Failed to update profile", {
+        description: error.message || "Please try again later",
+      });
     }
   };
 
@@ -364,17 +517,44 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
               <h1 className="text-2xl font-bold">{user.full_name}</h1>
               <p className="text-gray-600">@{user.id}</p>
               {user.bio && <p className="mt-2 text-center">{user.bio}</p>}
-              {loggedInUser?.id === user.id && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Profile
-              </Button>
-              )}
+              
+              <div className="mt-4 flex gap-2 w-full">
+                {loggedInUser?.id === user.id ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                ) : loggedInUser ? (
+                  <Button
+                    variant={isFollowing ? "outline" : "default"}
+                    size="sm"
+                    className={isFollowing 
+                      ? "w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium shadow-sm transition-colors" 
+                      : "w-full bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm transition-colors"}
+                    onClick={handleFollowAction}
+                    disabled={followLoading}
+                  >
+                    {followLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : isFollowing ? (
+                      <>
+                        <UserMinus className="w-4 h-4 mr-2 text-red-500" />
+                        Unfollow
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Follow
+                      </>
+                    )}
+                  </Button>
+                ) : null}
+              </div>
               
               <div className="flex justify-between w-full mt-6">
                 <button 
