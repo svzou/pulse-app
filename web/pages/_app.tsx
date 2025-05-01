@@ -3,38 +3,26 @@ import Header from "@/components/header";
 import "@/styles/globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AppProps } from "next/app";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import AppSidebar from "@/components/app-sidebar"
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import Head from "next/head";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import AppSidebar from "@/components/app-sidebar";
+import { Toaster } from "react-hot-toast";
+import LikeListener from "@/components/LikeListener";
 
 const queryClient = new QueryClient();
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    // Wrap the app in the query client provider to enable react-query
-    // and the theme provider to enable toggling between light / dark mode.
     <SidebarProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-           <Head>
-        <title>My Fitness App</title> {/* Default fallback */}
-        <meta
-          name="description"
-          content="Your all-in-one fitness tracking and workout sharing platform."
-        />
-      </Head>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <Toaster position="top-right" />
+          {pageProps?.user?.id && <LikeListener userId={pageProps.user.id} />}
           <div className="flex flex-row w-full h-screen">
-            <AppSidebar  />
+            <AppSidebar />
             <div className="flex-1 flex flex-col h-screen">
-              <Header/>
+              <Header />
               <main className="flex-1 overflow-auto pt-16 px-4 flex justify-center">
-              <Component {...pageProps} />
+                <Component {...pageProps} />
               </main>
             </div>
           </div>
