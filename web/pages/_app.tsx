@@ -32,6 +32,7 @@ export default function App({ Component, pageProps }: AppProps) {
               <Header />
               <main className="flex-1 overflow-auto pt-16 px-4 flex justify-center">
                 <Component {...pageProps} />
+                <Analytics />
               </main>
             </div>
           </div>
