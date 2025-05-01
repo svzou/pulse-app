@@ -28,7 +28,7 @@ export function CommentSection({ postId, userId }: CommentSectionProps) {
     const fetchComments = async () => {
       const { data, error } = await supabase
         .from('comments')
-        .select('id, user_id, post_id, content, created_at, users (username)')
+        .select('id, user_id, post_id, content, created_at, users!username')
         .eq('post_id', postId)
         .order('created_at', { ascending: false });
 
@@ -36,7 +36,7 @@ export function CommentSection({ postId, userId }: CommentSectionProps) {
         console.error('Error fetching comments:', error);
         return;
       }
-      setComments(data as Comment[]);
+      setComments(data as unknown as Comment[]);
     };
 
     fetchComments();
@@ -66,7 +66,7 @@ export function CommentSection({ postId, userId }: CommentSectionProps) {
       console.error('Error fetching comments:', fetchError);
       return;
     }
-    setComments(data as Comment[]);
+    setComments(data as unknown as Comment[]);
     setNewComment('');
   };
 

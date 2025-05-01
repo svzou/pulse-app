@@ -20,15 +20,25 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSignup = async (e) => {
+  interface SignupOptions {
+    data: {
+      name: string;
+    };
+  }
+
+  interface SignupError {
+    message: string;
+  }
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signUp({
+    const { error }: { error: SignupError | null } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: { data: { name } } as SignupOptions,
     });
 
     if (error) {

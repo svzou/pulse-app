@@ -6,11 +6,12 @@ import { LogIn, LogOut } from 'lucide-react';
 import { createSupabaseComponentClient } from '@/utils/supabase/clients/component';
 import { ModeToggle } from './ui/mode-toggle';
 import { useEffect, useState } from 'react';
+import { User } from '@supabase/supabase-js';
 
 export default function Header() {
   const router = useRouter();
   const supabase = createSupabaseComponentClient();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

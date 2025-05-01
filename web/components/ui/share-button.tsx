@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClientComponentClient, SupabaseClient } from '@supabase/auth-helpers-nextjs';
 import { Button } from './button';
 
 interface ShareButtonProps {
@@ -64,4 +64,8 @@ export function ShareButton({ postId, userId }: ShareButtonProps) {
       </Button>
     </div>
   );
+}
+
+function useEffect(arg0: () => void, arg1: (string | SupabaseClient<any, "public", any>)[]) {
+  throw new Error('Function not implemented.');
 }

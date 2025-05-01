@@ -13,7 +13,12 @@ import { useQueryClient } from '@tanstack/react-query';
 /**
  * Component for creating new workout posts
  */
-export default function CreatePost({ user }) {
+interface User {
+  id: string;
+  [key: string]: any;
+}
+
+export default function CreatePost({ user }: { user: User }) {
   const router = useRouter();
   const supabase = createClientComponentClient();
   const queryClient = useQueryClient();
@@ -24,11 +29,20 @@ export default function CreatePost({ user }) {
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [visibility, setVisibility] = useState("public");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  interface WorkoutPost {
+    user_id: string;
+    title: string;
+    description: string;
+    duration_minutes: number;
+    visibility: string;
+    attachment_url: string;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!user) {
@@ -74,7 +88,7 @@ export default function CreatePost({ user }) {
       
     } catch (err) {
       console.error("Error creating workout:", err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setIsSubmitting(false);
     }

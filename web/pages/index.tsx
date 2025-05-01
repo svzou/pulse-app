@@ -12,6 +12,9 @@ import { getFeed, getLikesFeed } from '@/utils/supabase/queries/workout';
 import Feed from "@/pages/feed";
 import CreateWorkout from '@/components/ui/create-workout';
 import { getProfileData } from '@/utils/supabase/queries/profile';
+import { GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { User } from '@supabase/auth-helpers-nextjs';
 
 enum HomePageTab {
   FOR_YOU = 'ForYou',
@@ -166,7 +169,7 @@ export default function Home({ user, profile }: HomeProps) {
       </div>
 
       {/* Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full">
+      <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as HomePageTab)} className="w-full">
         <div className="flex flex-row items-center gap-3 mx-4 mb-4">
           <TabsList className="grid grid-cols-2 w-full h-[52px] bg-muted rounded-xl p-1.5 shadow-sm border border-border">
             <TabsTrigger
@@ -221,8 +224,15 @@ export default function Home({ user, profile }: HomeProps) {
   );
 }
 
-export async function getServerSideProps(context) {
-  const supabase = createSupabaseServerClient(context);
+interface ServerSideProps {
+  user: User;
+  profile: any; // Replace `any` with a more specific type if available
+}
+
+export async function getServerSideProps(
+  context: GetServerSidePropsContext
+): Promise<GetServerSidePropsResult<ServerSideProps>> {
+  const supabase: SupabaseClient = createSupabaseServerClient(context);
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData) {

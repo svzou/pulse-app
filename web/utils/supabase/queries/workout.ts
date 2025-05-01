@@ -64,6 +64,33 @@ export const getWorkout = async (
   }
 };
 
+// Define profile interface
+interface Profile {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url: string | null;
+  created_at?: string;
+  bio?: string | null;
+  fitness_level?: string | null;
+}
+
+// Define workout interface with profile
+interface WorkoutWithProfile {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  duration_minutes: number;
+  visibility: string;
+  attachment_url?: string | null;
+  profiles?: Profile | Record<string, any>; // Handle both single profile and array/object
+  exercise_count?: number;
+  author?: Profile;
+  [key: string]: any; // Allow for additional properties
+}
+
 /**
  * Loads data for the user's workout feed with improved error handling and sorting
  * Returns recent workouts in reverse chronological order
@@ -74,10 +101,10 @@ export const getWorkout = async (
  * @returns Array of workout objects
  */
 export const getFeed = async (
-  supabase,
-  user,
-  cursor = 0
-) => {
+  supabase: SupabaseClient,
+  user: User,
+  cursor: number = 0
+): Promise<WorkoutWithProfile[]> => {
   try {
     console.log(`Fetching feed for user ${user.id}, starting at cursor ${cursor}`);
     
@@ -151,7 +178,8 @@ export const getFeed = async (
       return dateB - dateA; // Most recent first
     });
     
-    return sortedWorkouts;
+    // Type assertion to fix the type mismatch
+    return sortedWorkouts as WorkoutWithProfile[];
   } catch (err) {
     console.error("Unexpected error in getFeed:", err);
     throw err;
@@ -225,7 +253,7 @@ export const getLikesFeed = async (
   supabase: SupabaseClient,
   user: User,
   cursor: number
-): Promise<z.infer<typeof Workout>[]> => {
+): Promise<WorkoutWithProfile[]> => {
   try {
     // Get the list of workout IDs the user has liked
     const { data: likedWorkoutIds, error: likesError } = await supabase
@@ -361,6 +389,15 @@ export const toggleLike = async (
   }
 };
 
+// Define WorkoutData interface
+interface WorkoutData {
+  title: string;
+  description: string;
+  duration_minutes: number;
+  visibility: string;
+  attachment_url?: string;
+}
+
 /**
  * Create a new workout post
  * 
@@ -370,10 +407,10 @@ export const toggleLike = async (
  * @returns The created workout or null if there was an error
  */
 export const createWorkout = async (
-  supabase,
-  user,
-  workoutData
-) => {
+  supabase: SupabaseClient,
+  user: User,
+  workoutData: WorkoutData
+): Promise<WorkoutWithProfile | null> => {
   if (!user) return null;
 
   try {
@@ -504,6 +541,15 @@ export const deleteWorkout = async (
   }
 };
 
+// Define Exercise interface
+interface Exercise {
+  id: string;
+  name: string;
+  category?: string;
+  muscle_group?: string;
+  equipment?: string;
+}
+
 /**
  * Adds exercises to a workout
  * 
@@ -512,7 +558,11 @@ export const deleteWorkout = async (
  * @param exercises Array of exercise objects to add
  * @returns Promise<boolean> indicating success or failure
  */
-export async function addExercisesToWorkout(supabase, workoutId, exercises) {
+export async function addExercisesToWorkout(
+  supabase: SupabaseClient,
+  workoutId: string,
+  exercises: Exercise[]
+): Promise<boolean> {
   try {
     // Create an array of exercise entries with order positions
     const exerciseEntries = exercises.map((exercise, index) => ({
@@ -541,7 +591,7 @@ export async function addExercisesToWorkout(supabase, workoutId, exercises) {
     console.error("Error details:", JSON.stringify(error, null, 2));
     return false;
   }
-};
+}
 
 /**
  * Upload an attachment for a workout with improved error handling
@@ -553,11 +603,11 @@ export async function addExercisesToWorkout(supabase, workoutId, exercises) {
  * @returns The attachment URL or null if there was an error
  */
 export const uploadWorkoutAttachment = async (
-  supabase,
-  user,
-  workoutId,
-  file
-) => {
+  supabase: SupabaseClient,
+  user: User,
+  workoutId: string,
+  file: File
+): Promise<string | null> => {
   if (!user || !workoutId || !file) return null;
 
   try {
@@ -619,7 +669,6 @@ export const uploadWorkoutAttachment = async (
   }
 };
 
-
 /**
  * Get exercises for a specific workout
  * 
@@ -628,9 +677,9 @@ export const uploadWorkoutAttachment = async (
  * @returns Array of exercises associated with the workout
  */
 export const getWorkoutExercises = async (
-  supabase,
-  workoutId
-) => {
+  supabase: SupabaseClient,
+  workoutId: string
+): Promise<Exercise[]> => {
   if (!workoutId) {
     console.error("No workoutId provided to getWorkoutExercises");
     return [];
@@ -691,7 +740,7 @@ export const getWorkoutExercises = async (
     // Sort the exercises based on the original order_position
     const sortedExercises = exerciseIds.map(id => {
       return exerciseData.find(exercise => exercise.id === id);
-    }).filter(Boolean); // Remove any nulls/undefined (just in case)
+    }).filter(Boolean) as Exercise[]; // Remove any nulls/undefined (just in case)
     
     return sortedExercises;
   } catch (err) {

@@ -22,6 +22,7 @@ type FeedProps = {
   fetchNextPage: () => void;
   showCreatePost?: boolean;
   isLoading?: boolean;
+  additionalWorkouts?: any[];
 };
 
 // --- Main Feed Component ---

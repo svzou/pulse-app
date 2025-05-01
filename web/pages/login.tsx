@@ -20,23 +20,25 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
+  interface LoginFormEvent extends React.FormEvent<HTMLFormElement> {}
+
+  const handleLogin = async (e: LoginFormEvent): Promise<void> => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    
+
     const { error } = await supabase.auth.signInWithPassword({ 
       email, 
       password 
     });
-    
+
     if (error) {
       setError(error.message);
       console.error(error);
       setIsLoading(false);
       return;
     }
-    
+
     queryClient.resetQueries({ queryKey: ["user_profile"] });
     router.push('/');
   };

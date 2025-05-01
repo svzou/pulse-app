@@ -1,4 +1,11 @@
-const UserProfile = ({ name, handle, avatarUrl, stats }) => {
+interface UserProfileProps {
+  name: string;
+  handle: string;
+  avatarUrl: string;
+  stats: { value: string | number; label: string }[];
+}
+
+const UserProfile = ({ name, handle, avatarUrl, stats }: UserProfileProps) => {
   return (
     <div className="p-4 bg-card text-card-foreground border-none shadow-none">
       <div className="flex items-center gap-3">

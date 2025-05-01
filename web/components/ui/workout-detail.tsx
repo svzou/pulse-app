@@ -63,7 +63,21 @@ export default function WorkoutDetail({
   const [likesCount, setLikesCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [workoutExercises, setWorkoutExercises] = useState([]);
+  const [workoutExercises, setWorkoutExercises] = useState<{
+    id: any;
+    workout_id: any;
+    exercise_id: any;
+    order_position: any;
+    exercises: {
+      id: any;
+      name: any;
+      category: any;
+      muscle_group: any;
+      description: any;
+      equipment: any;
+      image_url: any;
+    };
+  }[]>([]);
   
   const isOwner = user?.id === workout?.author?.id;
   
@@ -110,7 +124,12 @@ export default function WorkoutDetail({
           }
           
           if (data) {
-            setWorkoutExercises(data);
+            setWorkoutExercises(
+              data.map((item) => ({
+                ...item,
+                exercises: Array.isArray(item.exercises) ? item.exercises[0] : item.exercises,
+              }))
+            );
           }
         } catch (err) {
           console.error("Failed to fetch workout exercises:", err);

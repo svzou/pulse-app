@@ -24,8 +24,21 @@ import { Image, Plus, X, FileImage, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 // Exercise selection component
-const ExerciseSelector = ({ selectedExercises, onExerciseAdd, onExerciseRemove }) => {
-  const [exercises, setExercises] = useState([]);
+interface Exercise {
+  id: string;
+  name: string;
+  category: string;
+  muscle_group: string;
+}
+
+interface ExerciseSelectorProps {
+  selectedExercises: Exercise[];
+  onExerciseAdd: (exercise: Exercise) => void;
+  onExerciseRemove: (index: number) => void;
+}
+
+const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({ selectedExercises, onExerciseAdd, onExerciseRemove }) => {
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [selectedExercise, setSelectedExercise] = useState("");
   const supabase = createClientComponentClient();
 
@@ -125,39 +138,43 @@ export default function CreateWorkout({ user }: { user: User }) {
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState(30);
   const [visibility, setVisibility] = useState("public");
-  const [selectedExercises, setSelectedExercises] = useState([]);
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedExercises, setSelectedExercises] = useState<{ id: string; name: string; category: string; muscle_group: string }[]>([]);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [debug, setDebug] = useState({});
 
   // Handle file selection
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0] || null;
+interface FileChangeEvent extends React.ChangeEvent<HTMLInputElement> {
+    target: HTMLInputElement & { files: FileList | null };
+}
+
+const handleFileChange = (e: FileChangeEvent): void => {
+    const file: File | null = e.target.files?.[0] || null;
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File too large", {
-          description: "Please select an image under 5MB",
-        });
-        return;
-      }
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("File too large", {
+                description: "Please select an image under 5MB",
+            });
+            return;
+        }
 
-      // Check file type
-      if (!file.type.startsWith("image/")) {
-        toast.error("Invalid file type", {
-          description: "Please select an image file",
-        });
-        return;
-      }
+        // Check file type
+        if (!file.type.startsWith("image/")) {
+            toast.error("Invalid file type", {
+                description: "Please select an image file",
+            });
+            return;
+        }
 
-      setImage(file);
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
+        setImage(file);
+        // Create preview URL
+        const previewUrl: string = URL.createObjectURL(file);
+        setImagePreview(previewUrl);
     }
-  };
+};
 
   // Remove selected image
   const removeImage = () => {
@@ -169,153 +186,177 @@ export default function CreateWorkout({ user }: { user: User }) {
   };
 
   // Add exercise to selection
-  const handleExerciseAdd = (exercise) => {
+interface HandleExerciseAddProps {
+    id: string;
+    name: string;
+    category: string;
+    muscle_group: string;
+}
+
+const handleExerciseAdd = (exercise: HandleExerciseAddProps): void => {
     // Make sure exercise has all required fields
     if (!exercise || !exercise.id) {
-      console.error("Invalid exercise object:", exercise);
-      return;
+        console.error("Invalid exercise object:", exercise);
+        return;
     }
     
     // Check if this exercise is already selected
-    const isDuplicate = selectedExercises.some(ex => ex.id === exercise.id);
+    const isDuplicate = selectedExercises.some((ex: HandleExerciseAddProps) => ex.id === exercise.id);
     if (isDuplicate) {
-      toast.info("Exercise already added", {
-        description: "This exercise is already in your workout"
-      });
-      return;
+        toast.info("Exercise already added", {
+            description: "This exercise is already in your workout"
+        });
+        return;
     }
     
     setSelectedExercises([...selectedExercises, exercise]);
-  };
+};
 
   // Remove exercise from selection
-  const handleExerciseRemove = (index) => {
-    const updated = [...selectedExercises];
+const handleExerciseRemove = (index: number): void => {
+    const updated: Exercise[] = [...selectedExercises];
     updated.splice(index, 1);
     setSelectedExercises(updated);
-  };
+};
 
   // Submit the workout
-  const handleSubmit = async (e) => {
+interface WorkoutData {
+    title: string;
+    description: string;
+    duration_minutes: number;
+    visibility: string;
+    attachment_url: string;
+}
+
+interface ValidExercise {
+    id: string;
+    name: string;
+    category: string;
+    muscle_group: string;
+}
+
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!title) {
-      toast.error("Title required", {
-        description: "Please provide a title for your workout",
-      });
-      return;
+        toast.error("Title required", {
+            description: "Please provide a title for your workout",
+        });
+        return;
     }
 
     setIsSubmitting(true);
     setUploadProgress(10);
     
     try {
-      // Step 1: Create workout in database
-      const workoutData = {
-        title,
-        description,
-        duration_minutes: duration,
-        visibility,
-        attachment_url: "",
-      };
+        // Step 1: Create workout in database
+        const workoutData: WorkoutData = {
+            title,
+            description,
+            duration_minutes: duration,
+            visibility,
+            attachment_url: "",
+        };
 
-      console.log("Creating workout with data:", workoutData);
-      const workout = await createWorkout(supabase, user, workoutData);
-      
-      if (!workout) {
-        throw new Error("Failed to create workout");
-      }
-      
-      setDebug(prev => ({ ...prev, workout }));
-      console.log("Workout created:", workout);
-      setUploadProgress(30);
-      
-      // Step 2: Upload image if provided
-      let imageUploaded = true;
-      if (image && workout.id) {
-        console.log("Uploading image for workout:", workout.id);
-        const attachmentUrl = await uploadWorkoutAttachment(
-          supabase,
-          user,
-          workout.id,
-          image
-        );
+        console.log("Creating workout with data:", workoutData);
+        const workout = await createWorkout(supabase, user, workoutData);
         
-        if (!attachmentUrl) {
-          console.warn("Image upload failed, but workout was created");
-          imageUploaded = false;
-        } else {
-          console.log("Image uploaded successfully:", attachmentUrl);
-        }
-      }
-      
-      setUploadProgress(60);
-      
-      // Step 3: Add selected exercises to workout
-      let exercisesAdded = true;
-      if (selectedExercises.length > 0 && workout.id) {
-        console.log("Adding exercises to workout:", workout.id);
-        console.log("Exercises to add:", selectedExercises);
-        
-        // Make sure each exercise has the required id field
-        const validExercises = selectedExercises.filter(ex => ex && ex.id);
-        if (validExercises.length !== selectedExercises.length) {
-          console.warn("Some exercises are missing id field, filtering them out");
+        if (!workout) {
+            throw new Error("Failed to create workout");
         }
         
-        if (validExercises.length > 0) {
-          const success = await addExercisesToWorkout(
-            supabase,
-            workout.id,
-            validExercises
-          );
-          
-          if (!success) {
-            console.warn("Failed to add exercises to workout");
-            exercisesAdded = false;
-          } else {
-            console.log("Exercises added successfully");
-          }
-        } else {
-          console.warn("No valid exercises to add");
-          exercisesAdded = false;
+        setDebug(prev => ({ ...prev, workout }));
+        console.log("Workout created:", workout);
+        setUploadProgress(30);
+        
+        // Step 2: Upload image if provided
+        let imageUploaded = true;
+        if (image && workout.id) {
+            console.log("Uploading image for workout:", workout.id);
+            const attachmentUrl = await uploadWorkoutAttachment(
+                supabase,
+                user,
+                workout.id,
+                image
+            );
+            
+            if (!attachmentUrl) {
+                console.warn("Image upload failed, but workout was created");
+                imageUploaded = false;
+            } else {
+                console.log("Image uploaded successfully:", attachmentUrl);
+            }
         }
-      }
-      
-      setUploadProgress(90);
+        
+        setUploadProgress(60);
+        
+        // Step 3: Add selected exercises to workout
+        let exercisesAdded = true;
+        if (selectedExercises.length > 0 && workout.id) {
+            console.log("Adding exercises to workout:", workout.id);
+            console.log("Exercises to add:", selectedExercises);
+            
+            // Make sure each exercise has the required id field
+            const validExercises: ValidExercise[] = selectedExercises.filter(
+                (ex): ex is ValidExercise => ex && ex.id !== undefined
+            );
+            if (validExercises.length !== selectedExercises.length) {
+                console.warn("Some exercises are missing id field, filtering them out");
+            }
+            
+            if (validExercises.length > 0) {
+                const success = await addExercisesToWorkout(
+                    supabase,
+                    workout.id,
+                    validExercises
+                );
+                
+                if (!success) {
+                    console.warn("Failed to add exercises to workout");
+                    exercisesAdded = false;
+                } else {
+                    console.log("Exercises added successfully");
+                }
+            } else {
+                console.warn("No valid exercises to add");
+                exercisesAdded = false;
+            }
+        }
+        
+        setUploadProgress(90);
 
-      // Refresh the feed
-      await queryClient.invalidateQueries({ queryKey: ["feed"] });
-      
-      // Reset form
-      setTitle("");
-      setDescription("");
-      setDuration(30);
-      setVisibility("public");
-      setSelectedExercises([]);
-      removeImage();
-      
-      setUploadProgress(100);
-      
-      // Show success message with appropriate warnings if needed
-      if (!imageUploaded || !exercisesAdded) {
-        toast.success("Workout created with issues", {
-          description: `Your workout was created but ${!imageUploaded ? 'the image' : ''}${!imageUploaded && !exercisesAdded ? ' and ' : ''}${!exercisesAdded ? 'the exercises' : ''} couldn't be saved.`,
-        });
-      } else {
-        toast.success("Workout Posted", {
-          description: "Your workout has been successfully shared!",
-        });
-      }
+        // Refresh the feed
+        await queryClient.invalidateQueries({ queryKey: ["feed"] });
+        
+        // Reset form
+        setTitle("");
+        setDescription("");
+        setDuration(30);
+        setVisibility("public");
+        setSelectedExercises([]);
+        removeImage();
+        
+        setUploadProgress(100);
+        
+        // Show success message with appropriate warnings if needed
+        if (!imageUploaded || !exercisesAdded) {
+            toast.success("Workout created with issues", {
+                description: `Your workout was created but ${!imageUploaded ? 'the image' : ''}${!imageUploaded && !exercisesAdded ? ' and ' : ''}${!exercisesAdded ? 'the exercises' : ''} couldn't be saved.`,
+            });
+        } else {
+            toast.success("Workout Posted", {
+                description: "Your workout has been successfully shared!",
+            });
+        }
     } catch (error) {
-      console.error("Error creating workout:", error);
-      toast.error("Failed to create workout", {
-        description: "An error occurred while creating your workout.",
-      });
+        console.error("Error creating workout:", error);
+        toast.error("Failed to create workout", {
+            description: "An error occurred while creating your workout.",
+        });
     } finally {
-      setIsSubmitting(false);
-      setTimeout(() => setUploadProgress(0), 1000); // Reset progress after 1 second
+        setIsSubmitting(false);
+        setTimeout(() => setUploadProgress(0), 1000); // Reset progress after 1 second
     }
-  };
+};
 
   return (
     <Card className="p-4 dark:bg-gray-400 shadow-sm">
