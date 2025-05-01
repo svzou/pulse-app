@@ -1,41 +1,76 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BarChart, PlusCircle, Image as ImageIcon, Edit, Users, UserPlus, UserMinus } from "lucide-react";
+import { BarChart, Edit, Users, UserPlus, UserMinus, Image as ImageIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { createSupabaseServerClient } from '@/utils/supabase/clients/server-props';
-import { getProfileData } from '@/utils/supabase/queries/profile';
 import { toast } from "sonner";
+import { GetServerSidePropsContext } from "next";
+import { getProfileData } from '@/utils/supabase/queries/profile';
 
-export default function ProfilePage({ user: initialUser, profile: initialProfile }) {
-  const supabase = createClientComponentClient();
+// Define TypeScript interfaces
+interface User {
+  id: string;
+  email?: string;
+}
+
+interface Profile {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  bio?: string;
+  updated_at?: string;
+}
+
+interface Workout {
+  id: string;
+  title: string;
+  description: string;
+  duration_minutes: number;
+  created_at: string;
+  user_id: string;
+  attachment_url?: string;
+}
+
+interface Stats {
+  user_id: string;
+  total_workouts: number;
+  total_duration: number;
+}
+
+interface ProfilePageProps {
+  user: User | null;
+  profile: Profile | null;
+}
+
+export default function ProfilePage({ user: initialUser, profile: initialProfile }: ProfilePageProps) {
+  const supabase = createClientComponentClient<Database>();
   const router = useRouter();
-  const [workouts, setWorkouts] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [photos, setPhotos] = useState([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [user, setUser] = useState(initialProfile || null);
+  const [user, setUser] = useState<Profile | null>(initialProfile);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [error, setError] = useState(null);
-  const [followers, setFollowers] = useState([]);
-  const [following, setFollowing] = useState([]);
+  const [error, setError] = useState<string | null>(null);
+  const [followers, setFollowers] = useState<Profile[]>([]);
+  const [following, setFollowing] = useState<Profile[]>([]);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState(initialUser);
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(initialUser);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
-  const fetchProfileData = async (userId) => {
+  const fetchProfileData = async (userId: string) => {
     try {
       setLoading(true);
       console.log("Fetching profile data for user:", userId);
@@ -54,7 +89,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
 
       if (profile) {
         console.log("Profile loaded:", profile);
-        setUser(profile);
+        setUser(profile as Profile);
         setBio(profile.bio || "");
         setAvatarUrl(profile.avatar_url || "");
       }
@@ -72,7 +107,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
 
       if (userStats) {
         console.log("Stats loaded:", userStats);
-        setStats(userStats);
+        setStats(userStats as Stats);
       }
 
       // recent workouts
@@ -89,7 +124,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
 
       if (recentWorkouts) {
         console.log("Workouts loaded:", recentWorkouts);
-        setWorkouts(recentWorkouts);
+        setWorkouts(recentWorkouts as Workout[]);
       }
 
       // workout photos
@@ -105,7 +140,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
 
       if (workoutPhotos) {
         console.log("Photos loaded:", workoutPhotos);
-        setPhotos(workoutPhotos.map((w) => w.attachment_url));
+        setPhotos(workoutPhotos.map((w) => w.attachment_url).filter(Boolean) as string[]);
       }
 
       // followers count
@@ -133,10 +168,11 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
       }
 
       setLoading(false);
-      return profile;
+      return profile as Profile;
     } catch (error) {
       console.error("Fetch error:", error);
       setLoading(false);
+      return null;
     }   
   };
 
@@ -156,7 +192,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
         .from("following")
         .select("*")
         .eq("follower_id", loggedInUser.id)
-        .eq("following_id", router.query.id)
+        .eq("following_id", router.query.id as string)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
@@ -194,7 +230,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
           .from("following")
           .delete()
           .eq("follower_id", loggedInUser.id)
-          .eq("following_id", router.query.id);
+          .eq("following_id", router.query.id as string);
   
         if (error) {
           console.error("Unfollow error details:", error);
@@ -218,7 +254,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
           .from("following")
           .select("*")
           .eq("follower_id", loggedInUser.id)
-          .eq("following_id", router.query.id)
+          .eq("following_id", router.query.id as string)
           .maybeSingle();
           
         if (checkError && checkError.code !== 'PGRST116') {
@@ -256,7 +292,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
           duration: 3000,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Follow action error:", error);
       setError("Failed to update follow status");
       
@@ -279,7 +315,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
       if (data?.session?.user) {
-        setLoggedInUser(data.session.user);
+        setLoggedInUser(data.session.user as User);
       }
     };
     
@@ -288,7 +324,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
 
   useEffect(() => {
     if (router.query.id) {
-      fetchProfileData(router.query.id);
+      fetchProfileData(router.query.id as string);
     }
   }, [router.query.id]);
 
@@ -313,7 +349,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
             avatar_url
           )
         `)
-        .eq("following_id", router.query.id);
+        .eq("following_id", router.query.id as string);
 
       if (error) {
         console.error("Error fetching followers:", error);
@@ -321,7 +357,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
       }
 
       if (data) {
-        setFollowers(data.map(item => item.profiles));
+        setFollowers(data.map(item => item.profiles as Profile));
         setShowFollowers(true);
         setShowFollowing(false);
       }
@@ -345,7 +381,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
             avatar_url
           )
         `)
-        .eq("follower_id", router.query.id);
+        .eq("follower_id", router.query.id as string);
 
       if (error) {
         console.error("Error fetching following:", error);
@@ -353,7 +389,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
       }
 
       if (data) {
-        setFollowing(data.map(item => item.profiles));
+        setFollowers(data.map(item => item.profiles as Profile));
         setShowFollowing(true);
         setShowFollowers(false);
       }
@@ -362,7 +398,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
     }
   };
 
-  const uploadAvatar = async (e) => {
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setError(null);
       setUploadingAvatar(true);
@@ -400,7 +436,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
           avatar_url: publicUrl,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", router.query.id);
+        .eq("id", router.query.id as string);
 
       if (updateError) {
         throw updateError;
@@ -413,8 +449,8 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
       toast.success("Profile picture updated");
 
       // Refreshing profile data
-      await fetchProfileData(router.query.id);
-    } catch (error) {
+      await fetchProfileData(router.query.id as string);
+    } catch (error: any) {
       console.error("Error uploading avatar:", error);
       setError(error.message || "Failed to upload avatar");
       toast.error("Failed to upload avatar", {
@@ -441,16 +477,16 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
       const { error: updateError } = await supabase
         .from("profiles")
         .update(updates)
-        .eq("id", router.query.id);
+        .eq("id", router.query.id as string);
 
       if (updateError) {
         throw updateError;
       }
 
       toast.success("Profile updated successfully");
-      await fetchProfileData(router.query.id);
+      await fetchProfileData(router.query.id as string);
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Profile update error:", error);
       setError(error.message || "Failed to update profile");
       toast.error("Failed to update profile", {
@@ -492,11 +528,11 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full overflow-hidden mb-4 relative group cursor-pointer">
                 <img
-                  src={user.avatar_url || "/default-avatar.png"}
-                  alt={user.id}
+                  src={user?.avatar_url || "/default-avatar.png"}
+                  alt={user?.id}
                   className="w-full h-full object-cover"
                 />
-                {loggedInUser?.id === user.id && (
+                {loggedInUser?.id === user?.id && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
                   <label className="w-full h-full flex items-center justify-center cursor-pointer">
                     <input
@@ -514,12 +550,12 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
                 </div>
                 )}
               </div>
-              <h1 className="text-2xl font-bold">{user.full_name}</h1>
-              <p className="text-gray-600">@{user.id}</p>
-              {user.bio && <p className="mt-2 text-center">{user.bio}</p>}
+              <h1 className="text-2xl font-bold">{user?.full_name}</h1>
+              <p className="text-gray-600">@{user?.id}</p>
+              {user?.bio && <p className="mt-2 text-center">{user.bio}</p>}
               
               <div className="mt-4 flex gap-2 w-full">
-                {loggedInUser?.id === user.id ? (
+                {loggedInUser?.id === user?.id ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -688,15 +724,14 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
             </h2>
             <div className="grid grid-cols-2 gap-2">
               {photos.length > 0 ? (
-                photos.map((photo, index) => {
-                  if(photo) return (
+                photos.map((photo, index) => (
                   <img
                     key={index}
                     src={photo}
                     alt={`Workout photo ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg"
                   />
-                )})
+                ))
               ) : (
                 <p className="col-span-2 text-center text-gray-500 py-4">No workout photos yet</p>
               )}
@@ -712,7 +747,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
             onClick={() => setIsEditing(false)}
           />
           <div className="relative min-h-screen flex items-center justify-center p-4">
-            <Card className="relative z-50 w-full max-w-md bg-background">
+            <Card className="relative z-50 w-full max-w-md bg-gray-500 dark:bg-gray-200">
               <div className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
                 {error && (
@@ -790,7 +825,7 @@ export default function ProfilePage({ user: initialUser, profile: initialProfile
   );
 }
 
-export async function getServerSideProps(context) {
+export async function getServerSideProps(context: GetServerSidePropsContext) {
   const supabase = createSupabaseServerClient(context);
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
