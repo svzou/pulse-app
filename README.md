@@ -9,6 +9,16 @@
 ![Supabase](https://img.shields.io/badge/-Supabase-05122A?style=flat&logo=supabase)
 
 _Add some screenshots or graphics here that show your app being used!_
+<img width="1709" alt="PNG image" src="https://github.com/user-attachments/assets/248cfa57-a222-44c7-961a-53545b48fd92" />
+<img width="1709" alt="PNG image" src="https://github.com/user-attachments/assets/feb51c00-6369-45be-9549-a3ce2aa5b942" />
+
+<img width="1709" alt="PNG image" src="https://github.com/user-attachments/assets/d73600b0-2324-419d-b063-ea5fedf964ed" />
+
+
+<img width="1709" alt="PNG image" src="https://github.com/user-attachments/assets/81c1801e-9dd2-4221-ae1f-01cc5f024e80" />
+<img width="1709" alt="PNG image" src="https://github.com/user-attachments/assets/cccabfa9-22d9-4641-9a12-9b1b17738c72" />
+
+
 
 _Include a short description of your app here._
 
