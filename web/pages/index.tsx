@@ -206,7 +206,7 @@ export default function Home({ user, profile }: HomeProps) {
           <TabsContent value={HomePageTab.FOR_YOU}>
             <Feed
               user={user}
-              workouts={workouts}
+              workouts={workouts ? { ...workouts, pages: workouts.pages.map(page => page.map(workout => ({ ...workout, attachment_url: workout.attachment_url || '' }))) } : undefined}
               fetchNextPage={fetchNextPage}
               additionalWorkouts={recentWorkouts}
             />
@@ -214,7 +214,7 @@ export default function Home({ user, profile }: HomeProps) {
           <TabsContent value={HomePageTab.LIKED}>
             <Feed
               user={user}
-              workouts={workouts}
+              workouts={workouts ? { ...workouts, pages: workouts.pages.map(page => page.map(workout => ({ ...workout, attachment_url: workout.attachment_url || '' }))) } : undefined}
               fetchNextPage={fetchNextPage}
             />
           </TabsContent>
