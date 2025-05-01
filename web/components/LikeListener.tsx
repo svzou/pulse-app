@@ -17,7 +17,7 @@ export default function LikeListener({ userId }: LikeListenerProps) {
     console.log("📡 Subscribing to realtime likes for user:", userId);
 
     const channel = supabase
-      .channel("realtime:likes") // ✅ Static channel name
+      .channel("realtime:likes") 
       .on(
         "postgres_changes",
         {

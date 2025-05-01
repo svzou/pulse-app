@@ -609,7 +609,7 @@ export default function ProfilePage({
             onClick={() => setIsEditing(false)}
           />
           <div className="relative min-h-screen flex items-center justify-center p-4">
-            <Card className="relative z-50 w-full max-w-md bg-background">
+            <Card className="relative z-50 w-full max-w-md bg-gray-500 dark:bg-gray-200">
               <div className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
                 {error && (

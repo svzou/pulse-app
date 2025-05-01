@@ -318,7 +318,7 @@ export default function CreateWorkout({ user }: { user: User }) {
   };
 
   return (
-    <Card className="p-4 bg-white dark:bg-gray-800 shadow-sm">
+    <Card className="p-4 dark:bg-gray-400 shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>

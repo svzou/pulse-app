@@ -6,7 +6,10 @@ import type { AppProps } from "next/app";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "@/components/app-sidebar";
 import { Toaster } from "react-hot-toast";
+
 import LikeListener from "@/components/LikeListener";
+import AvatarUpdateListener from "@/components/AvatarUpdateListener";
+import FollowerListener from "@/components/FollowerListener";
 
 const queryClient = new QueryClient();
 
@@ -16,7 +19,13 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <Toaster position="top-right" />
-          {pageProps?.user?.id && <LikeListener userId={pageProps.user.id} />}
+          {pageProps?.user?.id && (
+            <>
+              <LikeListener userId={pageProps.user.id} />
+              <AvatarUpdateListener userId={pageProps.user.id} />
+              <FollowerListener userId={pageProps.user.id} />
+            </>
+          )}
           <div className="flex flex-row w-full h-screen">
             <AppSidebar />
             <div className="flex-1 flex flex-col h-screen">
