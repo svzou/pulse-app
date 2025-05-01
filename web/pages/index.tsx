@@ -15,6 +15,7 @@ import { getProfileData } from '@/utils/supabase/queries/profile';
 import { GetServerSidePropsContext, GetServerSidePropsResult } from 'next';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { User } from '@supabase/auth-helpers-nextjs';
+import { Analytics } from "@vercel/analytics/react"
 
 enum HomePageTab {
   FOR_YOU = 'ForYou',

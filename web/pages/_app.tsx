@@ -6,7 +6,7 @@ import type { AppProps } from "next/app";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "@/components/app-sidebar";
 import { Toaster } from "react-hot-toast";
-
+import { Analytics } from "@vercel/analytics/react"
 import LikeListener from "@/components/LikeListener";
 import AvatarUpdateListener from "@/components/AvatarUpdateListener";
 import FollowerListener from "@/components/FollowerListener";
