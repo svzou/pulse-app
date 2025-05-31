@@ -8,7 +8,18 @@
 ![Tailwind](https://img.shields.io/badge/-Tailwind-05122A?style=flat&logo=tailwindcss)
 ![Supabase](https://img.shields.io/badge/-Supabase-05122A?style=flat&logo=supabase)
 
-_Add some screenshots or graphics here that show your app being used!_
+[Access the app here](https://final-project-team-17-39jo.vercel.app/login)
+
+**DEMO CREDENTIALS:**  
+**Username:** `sophia@sophia.com`  
+**Password:** `sophia`
+
+## Video Demo
+Click the thumbnail to see a demo of Pulse
+
+[![Watch the video](https://img.youtube.com/vi/OnZej9XzzCM/0.jpg)](https://www.youtube.com/watch?v=OnZej9XzzCM)
+
+## Images
 <img width="1709" alt="PNG image" src="https://github.com/user-attachments/assets/248cfa57-a222-44c7-961a-53545b48fd92" />
 <img width="1709" alt="PNG image" src="https://github.com/user-attachments/assets/feb51c00-6369-45be-9549-a3ce2aa5b942" />
 
@@ -20,7 +31,6 @@ _Add some screenshots or graphics here that show your app being used!_
 
 
 
-_Include a short description of your app here._
 
 ## Features
 
@@ -39,14 +49,3 @@ Description: This feature allows users to like workout posts in real time, simil
 5. User Profiles (Your Profile & Others')
 Description: This feature allows users to view both their own profile and the profiles of other users on the platform. Each profile displays the user’s avatar, name, username, and a grid or list of all their workout posts. It also shows key workout stats such as total number of workouts, and total duration worked out. Users can easily navigate to other profiles by tapping usernames  in posts, enabling exploration and connection with like-minded fitness enthusiasts (and giving you the option to follow them!). This feature fosters a sense of identity, community, and progress tracking by allowing users to showcase their fitness journey and explore others' for motivation and inspiration.
 
-
-
-
-## ...
-
-Feel free to add other sections as you see fit!
-
-## Creating A Branch
-
-1. Create and switch to your branch `git switch --create wip-[descriptive-branch-name]`
-2. Push your branch: `git push origin [branch-name]`
